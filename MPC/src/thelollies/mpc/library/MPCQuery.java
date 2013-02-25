@@ -19,6 +19,7 @@ public class MPCQuery implements Parcelable{
 	private int type = 0;
 	private String artist = "";
 	private String album = "";
+	private int buttonId = 0;
 	
 	// Note:
 	// Queries with return type MPCSong <= 3
@@ -52,7 +53,10 @@ public class MPCQuery implements Parcelable{
 	
 	/**
 	 * Constructor used when the query requires artist and album 
-	 * information.
+	 * information. Clicked button is the button pertaining to the
+	 * category this query was made from. Required by the return to
+	 * playing feature.
+	 *  
 	 * @param type MPCQuery constant indicating type of query
 	 */
 	public MPCQuery(int type, String artist, String album){
@@ -67,7 +71,8 @@ public class MPCQuery implements Parcelable{
 			MPCQuery q = (MPCQuery) o;
 			return (type == q.getType() && 
 					artist.equals(q.getArtist()) 
-					&& album.equals(q.getAlbum()));
+					&& album.equals(q.getAlbum())
+					&& buttonId == q.getButtonId());
 		}
 		return false;
 	}
@@ -93,6 +98,22 @@ public class MPCQuery implements Parcelable{
 		return album;
 	}
 	
+	/**
+	 * Sets the id of the button pertaining to the category this query was
+	 * made from
+	 */
+	
+	public void setButton(int buttonId){
+		this.buttonId = buttonId;
+	}
+	
+	/**
+	 * @return the id of the button pertaining to the category from which this query was made
+	 */
+	public int getButtonId() {
+		return buttonId;
+	}
+
 	//////// Parcelable required methods ////////
 	
     @Override
@@ -108,6 +129,7 @@ public class MPCQuery implements Parcelable{
     	out.writeInt(type);
     	out.writeString(artist);
     	out.writeString(album);
+    	out.writeInt(buttonId);
     }
 
     /**
@@ -133,5 +155,7 @@ public class MPCQuery implements Parcelable{
         type = in.readInt();
         artist = in.readString();
         album = in.readString();
+        buttonId = in.readInt();
     }
+
 }

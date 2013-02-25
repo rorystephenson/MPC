@@ -22,7 +22,7 @@ public class StatusThread extends Thread{
 	private BufferedReader in;
 	private PrintWriter out;
 	
-	private boolean playing = false;
+	private MPCStatus status;
 	
 	private boolean failed = false;
 
@@ -66,22 +66,29 @@ public class StatusThread extends Thread{
 	private void checkPlayingStatus() throws IOException {
 		out.println("status");
 
+		boolean playing = false;
+		boolean shuffling = false;
+		
 		String response;
 		while((response = in.readLine()) != null){
 			if(response.equals("OK")){break;}
 			if(response.startsWith("state: ")){
 				String state = response.substring(7);
 				playing = state.equals("play") ? true : false;
-				return;
+			}
+			if(response.startsWith("random: ")){
+				int shuffleValue = Integer.parseInt(response.substring(8));
+				shuffling = shuffleValue == 1 ? true : false;
 			}
 		}
+		status = new MPCStatus(playing, shuffling);
 	}
 
 	/**
 	 * @return true if a song is playing on the MPD server
 	 */
-	public boolean getPlaying(){
-		return playing;
+	public MPCStatus getStatus(){
+		return status;
 	}
 	
 	public boolean failed(){

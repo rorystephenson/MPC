@@ -96,7 +96,7 @@ public class MPC {
 	 * 
 	 * @return true if a songs is playing on the MPD server
 	 */
-	public boolean isPlaying(){
+	public MPCStatus getStatus(){
 		StatusThread thread = new StatusThread(address, port);
 		thread.start();
 		try {thread.join();} catch (InterruptedException e) {e.printStackTrace();}
@@ -107,13 +107,13 @@ public class MPC {
 				Toast.makeText(context, "Connection failed, check settings", Toast.LENGTH_LONG).show();
 			}
 			else{
-				return thread.getPlaying();
+				return thread.getStatus();
 			}
 		} catch(Exception e){
 			e.printStackTrace();
 		}
 		
-		return false;
+		return null;
 	}
 
 	/**
@@ -152,6 +152,20 @@ public class MPC {
 			}
 		} catch(Exception e){
 			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Enables/disables the shuffle feature on the MPDServer
+	 * 
+	 * @param shuffle true to turn on, false to turn off
+	 */
+	public void shuffle(boolean shuffle) {
+		if(shuffle){
+			sendMessage("random 1");
+		}
+		else{
+			sendMessage("random 0");
 		}
 	}
 
