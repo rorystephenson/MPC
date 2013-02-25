@@ -8,7 +8,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 /**
- * Thread used to query the server's status (used to see if music is playing).
+ * Thread used to query the server's status (used to see if music is playing
+ * and if the playlist is set to shuffle).
  * @author thelollies
  *
  */
@@ -60,7 +61,8 @@ public class StatusThread extends Thread{
 	}
 
 	/**
-	 * Determines whether a song is playing or not.
+	 * Determines whether a song is playing and whether the MPD server
+	 * is set to shuffle.
 	 * @throws IOException
 	 */
 	private void checkPlayingStatus() throws IOException {
@@ -85,7 +87,7 @@ public class StatusThread extends Thread{
 	}
 
 	/**
-	 * @return true if a song is playing on the MPD server
+	 * @return MPCStatus representing the required status information of the MPD server
 	 */
 	public MPCStatus getStatus(){
 		return status;
