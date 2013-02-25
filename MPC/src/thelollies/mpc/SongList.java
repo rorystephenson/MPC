@@ -4,6 +4,7 @@ import java.util.List;
 
 import thelollies.mpc.R;
 
+import thelollies.mpc.library.MPCStatus;
 import thelollies.mpc.library.SongDatabase;
 import thelollies.mpc.library.MPC;
 import thelollies.mpc.library.MPCAlbum;
@@ -13,6 +14,7 @@ import thelollies.mpc.library.MPCSong;
 import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -65,14 +67,14 @@ public class SongList  extends ListActivity {
 			extras.putParcelable(PLAY, query);
 			extras.putParcelable(DISPL, query);
 		}
-		
-		
+
+
 		// Read intents
 		pressedButton = extras.getInt(CLICK);
 		playing = (MPCQuery)extras.get(PLAY);
 		displaying = (MPCQuery)extras.get(DISPL);
 
-		
+
 		// Create list of songs/artist names/albums specified in displaying query
 		if(displaying.getType() <= 3){ // Return type is List<MPCSong>
 			List<MPCSong> songs = new SongDatabase(this).processSongQuery(displaying);
@@ -103,13 +105,13 @@ public class SongList  extends ListActivity {
 				findViewById(buttons[i]).setBackgroundColor(getResources().getColor(R.color.mediumGrey));
 			}
 		}
-		
+
 	}
-	
+
 	@Override
 	public void onPostCreate(Bundle savedInstanceState){
 		super.onPostCreate(savedInstanceState);
-		updatePlayButton();
+		updateButtons();
 	}
 
 	/**
@@ -127,8 +129,9 @@ public class SongList  extends ListActivity {
 				mpc.enqueSongs(songs);
 				playing = displaying;
 			}
+			playing.setButton(pressedButton);
 			mpc.play(position);
-			updatePlayButton();
+			updateButtons();
 		}
 		else if(o instanceof MPCAlbum){
 			MPCAlbum album = (MPCAlbum) o;
@@ -159,14 +162,29 @@ public class SongList  extends ListActivity {
 	/**
 	 * If music is playing show the pause button, if paused show the play button.
 	 */
-	private void updatePlayButton() {
+	private void updateButtons() {
 		MPC mpc = new MPC(this);
-		
-		if(mpc.isPlaying()){
-			findViewById(R.id.playPauseButton).setBackgroundResource(R.drawable.pause);
+		MPCStatus status = mpc.getStatus();
+
+		if(status == null){return;}
+
+		View playPauseView = findViewById(R.id.playPauseButton);
+		if(status.playing()){
+			playPauseView.setBackgroundResource(R.drawable.pause);
+			playPauseView.setTag(R.id.playPauseButton, "pause");
+		} else{
+			playPauseView.setBackgroundResource(R.drawable.play);
+			playPauseView.setTag(R.id.playPauseButton, "play");
 		}
-		else{
-			findViewById(R.id.playPauseButton).setBackgroundResource(R.drawable.play);
+
+		View shuffleBtn = findViewById(R.id.shuffleButton);
+		if(status.shuffling()){
+			shuffleBtn.setBackgroundResource(R.drawable.shuffle);
+			shuffleBtn.setTag(R.id.shuffleButton, "on");
+
+		} else{
+			shuffleBtn.setBackgroundResource(R.drawable.shuffle_off);
+			shuffleBtn.setTag(R.id.shuffleButton, "off");
 		}
 	}
 
@@ -209,7 +227,7 @@ public class SongList  extends ListActivity {
 
 		startActivity(intent);
 	}
-	
+
 	/**
 	 * Fired when the rewind button is clicked. Skips back a song in the playlist.
 	 * @param v
@@ -217,26 +235,61 @@ public class SongList  extends ListActivity {
 	public void rewind(View v){
 		new MPC(this).previous();
 	}
-	
+
 	/**
 	 * Handles clicking of the play/pause button. Passing the appropriate action to
 	 * the server.
 	 * @param v
 	 */
 	public void playPause(View v){
-		
+
 		MPC mpc = new MPC(this);
-		
-		if(v.getBackground().equals(R.drawable.play)){
+
+		if(v.getTag(R.id.playPauseButton).equals("play")){
 			mpc.play();
 		}
 		else{
 			mpc.pause();
 		}
-		
-		updatePlayButton();
+
+		updateButtons();
 	}
-	
+
+	/**
+	 *  Toggles shuffle mode on the MPD server, fired by shuffle button.
+	 *  @param v
+	 */
+	public void shuffleToggle(View v){
+		MPC mpc = new MPC(this);
+
+		if(v.getTag(R.id.shuffleButton).equals("on")){
+			mpc.shuffle(false);
+		}
+		else{
+			mpc.shuffle(true);
+		}
+
+		updateButtons();
+	}
+
+	/**
+	 * Navigates to the currently playing playlist, fired by returnnote
+	 * button
+	 */
+	public void returnToPlaying(View view){
+		if(!playing.equals(displaying)){
+			
+			Intent intent = new Intent(this, thelollies.mpc.SongList.class);
+			
+			intent.putExtra(PLAY, playing);
+			intent.putExtra(CLICK, playing.getButtonId());
+			intent.putExtra(DISPL, playing);
+			
+			startActivity(intent);
+			
+		}
+	}
+
 	/**
 	 * Fires when fast forward button is clicked. Skips to the next song in the playlist.
 	 * @param v
@@ -355,6 +408,7 @@ public class SongList  extends ListActivity {
 			return v;
 		}
 	}
+
 }
 
 
