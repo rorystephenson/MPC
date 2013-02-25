@@ -4,12 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
-import android.util.Log;
 
 /**
  * Handles interaction with the MPD server database. Used to fetch all song
@@ -28,6 +28,8 @@ public class DatabaseThread extends Thread{
 	private Socket sock;
 	private BufferedReader in;
 	private PrintWriter out;
+	
+	private boolean failed = false;
 
 	/**
 	 * Creates an instance of database thread with the specified settings
@@ -49,9 +51,11 @@ public class DatabaseThread extends Thread{
 
 		// Establish socket connection
 		try{
-			this.sock = new Socket(address, port);
-			this.in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-			this.out = new PrintWriter(sock.getOutputStream(), true);
+			sock = new Socket();
+			sock.connect(new InetSocketAddress(address, port), MPC.TIMEOUT);
+			
+			in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+			out = new PrintWriter(sock.getOutputStream(), true);
 
 			// Clear version number from buffer
 			in.readLine();
@@ -59,13 +63,14 @@ public class DatabaseThread extends Thread{
 			renewServer();
 			renewDatabase();
 
+		} catch(Exception e){
+			failed = true;
+		}
+		try{
 			sock.close();
 			in.close();
 			out.close();
-		} catch(Exception e){
-			Log.i("Network error", "failed in renewing database");
-			e.printStackTrace();
-		}
+		} catch(Exception e){}
 	}
 
 	/**
@@ -130,6 +135,10 @@ public class DatabaseThread extends Thread{
 			db.insertSong(song);
 		}
 
+	}
+	
+	public boolean failed(){
+		return failed;
 	}
 
 }

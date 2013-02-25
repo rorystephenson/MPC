@@ -2,7 +2,7 @@ package thelollies.mpc;
 
 import java.util.List;
 
-import com.example.mpc.R;
+import thelollies.mpc.R;
 
 import thelollies.mpc.library.SongDatabase;
 import thelollies.mpc.library.MPC;
@@ -104,7 +104,12 @@ public class SongList  extends ListActivity {
 			}
 		}
 		
-		updatePlayButton(); // Show pause button if music is playing or play button if paused
+	}
+	
+	@Override
+	public void onPostCreate(Bundle savedInstanceState){
+		super.onPostCreate(savedInstanceState);
+		updatePlayButton();
 	}
 
 	/**

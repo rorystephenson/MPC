@@ -4,8 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
-import android.util.Log;
 
 /**
  * Thread used to query the server's status (used to see if music is playing).
@@ -23,6 +23,8 @@ public class StatusThread extends Thread{
 	private PrintWriter out;
 	
 	private boolean playing = false;
+	
+	private boolean failed = false;
 
 	public StatusThread(String address, int port){
 
@@ -36,22 +38,25 @@ public class StatusThread extends Thread{
 
 		// Establish socket connection
 		try{
-			this.sock = new Socket(address, port);
-			this.in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-			this.out = new PrintWriter(sock.getOutputStream(), true);
+			sock = new Socket();
+			sock.connect(new InetSocketAddress(address, port), MPC.TIMEOUT);
+			
+			in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+			out = new PrintWriter(sock.getOutputStream(), true);
 
 			// Clear version number from buffer
 			in.readLine();
 
 			checkPlayingStatus();
 
+		} catch(Exception e){
+			failed = true;
+		}
+		try{
 			sock.close();
 			in.close();
 			out.close();
-		} catch(Exception e){
-			Log.i("Network error", "couldn't determine whether playing/paused");
-			e.printStackTrace();
-		}
+		} catch(Exception e){}
 	}
 
 	/**
@@ -67,7 +72,6 @@ public class StatusThread extends Thread{
 			if(response.startsWith("state: ")){
 				String state = response.substring(7);
 				playing = state.equals("play") ? true : false;
-				System.out.println(playing);
 				return;
 			}
 		}
@@ -78,5 +82,9 @@ public class StatusThread extends Thread{
 	 */
 	public boolean getPlaying(){
 		return playing;
+	}
+	
+	public boolean failed(){
+		return failed;
 	}
 }

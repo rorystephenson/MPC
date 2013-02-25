@@ -1,10 +1,9 @@
 package thelollies.mpc;
 
 
-import com.example.mpc.R;
+import thelollies.mpc.R;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -42,8 +41,6 @@ public class Settings extends Activity {
 		Bundle extras = getIntent().getExtras();
 		playing = (MPCQuery)extras.get(SongList.PLAY);
 
-		System.out.println(Integer.toHexString(-1118482));
-
 		// Colour currently selected button
 		for (int i = 0; i < 4; i++){
 			if(SongList.buttons[i] == R.id.settingsButton){
@@ -73,11 +70,6 @@ public class Settings extends Activity {
 	 * @param v
 	 */
 	public void renewDatabase(View v){
-		System.out.println(System.currentTimeMillis());
-		ProgressDialog progress;
-		progress = ProgressDialog.show(this, "Database",
-				"updating", true);
-
 		EditText addressView = (EditText) findViewById(R.id.address); 
 		EditText portView = (EditText) findViewById(R.id.port);
 
@@ -91,7 +83,6 @@ public class Settings extends Activity {
 		MPC mpc = new MPC(this);
 		mpc.renewDatabase();
 
-		progress.dismiss();
 	}
 
 	/**

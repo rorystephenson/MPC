@@ -1,12 +1,8 @@
 package thelollies.mpc.library;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
 import java.util.List;
-
 import android.content.Context;
+import android.widget.Toast;
 
 /**
  * This class manages connection with the MPD server and all connections
@@ -20,6 +16,7 @@ public class MPC {
 	private String address;
 	private int port;
 	private final Context context;
+	public static final int TIMEOUT = 1000; // connection timeout (ms)
 
 	/**
 	 * This constructor accepts the instance MPC is instantiated from and sets
@@ -43,7 +40,16 @@ public class MPC {
 		db.clearSongs();
 		DatabaseThread thread = new DatabaseThread(address, port, context);
 		thread.start();
-		try {thread.join();} catch (InterruptedException e) {e.printStackTrace();}
+
+		// Check if the connection succeeded
+		try{
+			thread.join();
+			if(thread.failed()){
+				Toast.makeText(context, "Connection failed, check settings", Toast.LENGTH_LONG).show();
+			}
+		} catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -51,140 +57,40 @@ public class MPC {
 	 * 
 	 * @param index position in the playlist of the song to play
 	 */
-	public void play(final int index){
-		Thread thread = new Thread(){
-			@Override
-			public void run(){
-				try{
-					Socket sock = new Socket(address, port);
-					BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-					PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
-
-					// Remove the version number from the buffer
-					in.readLine();
-
-					// Play the song
-					out.println("play " + index);
-
-					sock.close();
-					in.close();
-					out.close();
-
-				} catch(Exception e){
-					e.printStackTrace();
-				}
-			}
-		};
-		thread.start();
-		try{thread.join();}catch(Exception e){e.printStackTrace();}
+	public void play(int index){
+		sendMessage("play " + index);
 	}
 
 	/**
 	 * Sends a request to continue playback from where it was paused
 	 */
 	public void play(){
-		Thread thread = new Thread(){
-			@Override
-			public void run(){
-				try{
-					Socket sock = new Socket(address, port);
-					PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
-
-					// Play the song
-					out.println("play");
-
-					sock.close();
-					out.close();
-
-				} catch(Exception e){
-					e.printStackTrace();
-				}
-			}
-		};
-		thread.start();
-		try{thread.join();}catch(Exception e){e.printStackTrace();}
+		sendMessage("play");
 	}
-	
+
 	/**
 	 * Sends a request to the MPD server to pause playback
 	 */
 	public void pause(){
-		Thread thread = new Thread(){
-			@Override
-			public void run(){
-				try{
-					Socket sock = new Socket(address, port);
-					PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
-
-					// Play the song
-					out.println("pause");
-
-					sock.close();
-					out.close();
-
-				} catch(Exception e){
-					e.printStackTrace();
-				}
-			}
-		};
-		thread.start();
-		try{thread.join();}catch(Exception e){e.printStackTrace();}
+		sendMessage("pause");
 	}
-	
+
 	/**
 	 * Sends a request to the MPD server to move playback to the previous song
 	 * in the current playlist
 	 */
 	public void previous(){
-		Thread thread = new Thread(){
-			@Override
-			public void run(){
-				try{
-					Socket sock = new Socket(address, port);
-					PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
-
-					// Play the song
-					out.println("previous");
-
-					sock.close();
-					out.close();
-
-				} catch(Exception e){
-					e.printStackTrace();
-				}
-			}
-		};
-		thread.start();
-		try{thread.join();}catch(Exception e){e.printStackTrace();}
+		sendMessage("previous");
 	}
-	
+
 	/**
 	 * Sends a request to the MPD server to move playback to the next song in
 	 * the current playlist
 	 */
 	public void next(){
-		Thread thread = new Thread(){
-			@Override
-			public void run(){
-				try{
-					Socket sock = new Socket(address, port);
-					PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
-
-					// Play the song
-					out.println("next");
-
-					sock.close();
-					out.close();
-
-				} catch(Exception e){
-					e.printStackTrace();
-				}
-			}
-		};
-		thread.start();
-		try{thread.join();}catch(Exception e){e.printStackTrace();}
+		sendMessage("next");
 	}
-	
+
 	/**
 	 * Queries the MPD server's status to determine if a song is playing
 	 * 
@@ -194,7 +100,20 @@ public class MPC {
 		StatusThread thread = new StatusThread(address, port);
 		thread.start();
 		try {thread.join();} catch (InterruptedException e) {e.printStackTrace();}
-		return thread.getPlaying();
+		// Check if the connection succeeded
+		try{
+			thread.join();
+			if(thread.failed()){
+				Toast.makeText(context, "Connection failed, check settings", Toast.LENGTH_LONG).show();
+			}
+			else{
+				return thread.getPlaying();
+			}
+		} catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		return false;
 	}
 
 	/**
@@ -206,7 +125,34 @@ public class MPC {
 	public void enqueSongs(List<MPCSong> songs) {
 		EnqueThread thread = new EnqueThread(address, port, songs);
 		thread.start();
-		try {thread.join();} catch (InterruptedException e) {e.printStackTrace();}
+		// Check if the connection succeeded
+		try{
+			thread.join();
+			if(thread.failed()){
+				Toast.makeText(context, "Connection failed, check settings", Toast.LENGTH_LONG).show();
+			}
+		} catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Send the specified message to the MPD server, use newline char to seperate lines
+	 * @param message String to send to the MPD server
+	 */
+	private void sendMessage(String message){
+		MessageThread thread = new MessageThread(address, port, message);
+		thread.start();
+
+		// Check if the connection succeeded
+		try{
+			thread.join();
+			if(thread.failed()){
+				Toast.makeText(context, "Connection failed, check settings", Toast.LENGTH_LONG).show();
+			}
+		} catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 
 }

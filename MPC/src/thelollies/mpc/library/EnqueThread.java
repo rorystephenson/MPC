@@ -4,9 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.List;
-import android.util.Log;
 
 /**
  * Handles playlist manipulation on the MPD server. Allows songs to be enqued on
@@ -25,6 +25,8 @@ public class EnqueThread extends Thread {
 	private PrintWriter out;
 
 	private List<MPCSong> songs;
+	
+	private boolean failed = false;
 
 	/**
 	 * Creates an instance of EnqueThread with the specified settings
@@ -44,22 +46,25 @@ public class EnqueThread extends Thread {
 
 		// Establish socket connection
 		try{
-			this.sock = new Socket(address, port);
-			this.in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-			this.out = new PrintWriter(sock.getOutputStream(), true);
+			sock = new Socket();
+			sock.connect(new InetSocketAddress(address, port), MPC.TIMEOUT);
+			
+			in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+			out = new PrintWriter(sock.getOutputStream(), true);
 
 			// Clear version number from buffer
 			in.readLine();
 
 			enqueSongs();
-
+		} catch(Exception e){
+			failed = true;
+		}
+		
+		try{
 			sock.close();
 			in.close();
 			out.close();
-		} catch(Exception e){
-			Log.i("Network error", "failed in enqueing playlist");
-			e.printStackTrace();
-		}
+		} catch(Exception e){}
 	}
 
 	/**
@@ -83,6 +88,10 @@ public class EnqueThread extends Thread {
 		out.println("command_list_end"); // indicate to server that it can process the entries
 		in.readLine();
 
+	}
+	
+	public boolean failed(){
+		return failed;
 	}
 	
 }
