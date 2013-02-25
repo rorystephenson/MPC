@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">MPC</string>
+    <string name="songsButton">Songs</string>
+    <string name="artistsButton">Artists</string>
+    <string name="albumsButton">Albums</string>
+    <string name="settings">Settings</string>
+    <string name="address">Address</string>
+    <string name="port">Port</string>
+    <string name="databaseButton">Renew Database</string>
+    <string name="saveButton">Save</string>
+    <string name="vinylIcon">Album</string>
+    <string name="artistIcon">Artist</string>
+
+</resources>
