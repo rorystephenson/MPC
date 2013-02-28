@@ -21,9 +21,9 @@ public class MPCSong {
 	public MPCSong(String file, int time, String artist, String title, String album, int track){
 		this.file = file;
 		this.time = time;
-		this.artist = artist;
-		this.title = title;
-		this.album = album;
+		this.artist = artist == null ? "Unknown Artist" : artist;
+		this.title = title == null ? file : title;
+		this.album = album == null ? "Unknown Album" : album;
 		this.track = track;
 	}
 	

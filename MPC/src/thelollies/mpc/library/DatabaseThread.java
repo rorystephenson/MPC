@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class DatabaseThread extends Thread{
 	private Socket sock;
 	private BufferedReader in;
 	private PrintWriter out;
-	
+
 	private boolean failed = false;
 
 	/**
@@ -53,7 +54,7 @@ public class DatabaseThread extends Thread{
 		try{
 			sock = new Socket();
 			sock.connect(new InetSocketAddress(address, port), MPC.TIMEOUT);
-			
+
 			in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 			out = new PrintWriter(sock.getOutputStream(), true);
 
@@ -65,6 +66,7 @@ public class DatabaseThread extends Thread{
 
 		} catch(Exception e){
 			failed = true;
+			e.printStackTrace();
 		}
 		try{
 			sock.close();
@@ -82,15 +84,6 @@ public class DatabaseThread extends Thread{
 	private void renewServer() throws IOException {
 		out.println("update");
 		in.readLine();in.readLine();
-		
-		while(true){
-			out.println("status");
-			char[] chars = new char[1000];
-			in.read(chars);
-			String response = new String(chars);
-			
-			if(!response.contains("updating_db")){break;}
-		}
 	}
 
 	/**
@@ -104,27 +97,52 @@ public class DatabaseThread extends Thread{
 		out.println("listallinfo");
 
 		List<MPCSong> songs = new ArrayList<MPCSong>(); // used to store songs before saving
-		String response;
-		// Read the database response into an ArrayList until 'OK' is reached
-		while((response = in.readLine()) != null){
-			if(response.equals("OK")){break;} //end loop on "OK" responses
 
+		ArrayList<String> response = new ArrayList<String>();
+		String line;
+		while((line = in.readLine()) != null){
+			if(line.equals("OK")){break;}
+			response.add(line);
+		}
+
+		int count = 0;
+		while(count < response.size()){
+
+			// Song attributes
 			String file = null;
-			int time = -1;
+			int time = 0;
 			String artist = null;
 			String title = null;
 			String album = null;
-			int track = -1;
+			int track = 0;
 
-			for(int i = 0; i < 12; i++, response = in.readLine()){
-				if(response.startsWith("directory: ")){i--;continue;} // skip and ignore "directory: ..."
-				if(i==0){file = response.substring(6);}
-				else if(i==2){time = Integer.parseInt(response.substring(6));}
-				else if(i==3){artist = response.substring(8);}
-				else if(i==4){title = response.substring(7);}
-				else if(i==5){album = response.substring(7);}
-				else if(i==6){track = Integer.parseInt(response.substring(7, 9));}
-				else if(i>6){in.readLine();in.readLine();break;} // skip remaining data
+			boolean nextSong = false;
+			while(count < response.size()){
+				String currentLine = response.get(count);
+				if(currentLine.startsWith("directory: ")){
+					count++;continue;} // Skip directory lines
+				else if(currentLine.startsWith("file: ")){
+					if(nextSong){break;}
+					file = currentLine.substring(6);
+					nextSong = true;
+				}
+				else if(currentLine.startsWith("Time: ")){
+					time = Integer.parseInt(currentLine.substring(6));}
+				else if(currentLine.startsWith("Artist: ")){
+					artist = currentLine.substring(8);}
+				else if(currentLine.startsWith("Title: ")){
+					title = currentLine.substring(7);}
+				else if(currentLine.startsWith("Album: ")){
+					album = currentLine.substring(7);}
+				else if(currentLine.startsWith("Track: ")){
+					if(currentLine.contains("/")){ // Handles track numbers with num/total format
+						currentLine.substring(7,currentLine.indexOf("/"));
+					}
+					else{
+						track = Integer.parseInt(currentLine.substring(7));
+					}
+				}
+				count++;
 
 			}
 			songs.add(new MPCSong(file, time, artist, title, album, track));
@@ -136,7 +154,7 @@ public class DatabaseThread extends Thread{
 		}
 
 	}
-	
+
 	public boolean failed(){
 		return failed;
 	}

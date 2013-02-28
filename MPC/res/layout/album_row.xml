@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="70dp"
+    android:layout_height="wrap_content"
+    android:gravity="center"
     android:orientation="horizontal"
     android:padding="0dp" >
 
@@ -14,26 +15,25 @@
     <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="0dp" >
 
         <TextView
             android:id="@+id/toptext"
             android:layout_width="fill_parent"
-            android:layout_height="25dp"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
-            android:ellipsize="marquee"
             android:gravity="center_vertical"
+            android:singleLine="true"
             android:textColor="#000000"
             android:textSize="20sp" />
 
         <TextView
             android:id="@+id/bottomtext"
             android:layout_width="fill_parent"
-            android:layout_height="25dp"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
-            android:ellipsize="marquee"
             android:singleLine="true"
             android:textColor="#666666"
             android:textSize="15sp" />

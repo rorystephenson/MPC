@@ -1,34 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/music_buttons"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="50dp"
+    android:layout_margin="0dp"
     android:background="@color/mediumGrey"
-    android:gravity="center"
-    android:orientation="horizontal" >
+    android:orientation="horizontal"
+    android:padding="0dp" >
 
     <Button
-        android:id="@+id/artistsButton"
+        android:id="@+id/returnButton"
+        android:layout_alignParentLeft="true" 
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_margin="5dp"
-        android:background="@drawable/rewind"
-        android:onClick="rewind" />
+        android:background="@drawable/returnote"
+        android:onClick="returnToPlaying"
+        android:layout_marginLeft="5dp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:orientation="horizontal"
+        android:layout_centerHorizontal="true"
+        android:padding="0dp"
+        android:layout_margin="0dp" >
+
+        <Button
+            android:id="@+id/artistsButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@drawable/rewind"
+            android:onClick="rewind" />
+
+        <Button
+            android:id="@+id/playPauseButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:background="@drawable/play"
+            android:onClick="playPause" />
+
+        <Button
+            android:id="@+id/nextButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@drawable/fast_forward"
+            android:onClick="fastForward" />
+    </LinearLayout>
 
     <Button
-        android:id="@+id/playPauseButton"
+        android:id="@+id/shuffleButton"
+		android:layout_alignParentRight="true"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_margin="5dp"
-        android:background="@drawable/play"
-        android:onClick="playPause" />
+        android:background="@drawable/shuffle_off"
+        android:onClick="shuffleToggle"
+        android:layout_marginRight="5dp" />
 
-    <Button
-        android:id="@+id/nextButton"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_margin="5dp"
-        android:background="@drawable/fast_forward"
-        android:onClick="fastForward" />
-
-</LinearLayout>
+</RelativeLayout>
