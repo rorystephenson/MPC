@@ -6,11 +6,13 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.util.Log;
+import android.widget.Toast;
 
 /**
  * Handles interaction with the MPD server database. Used to fetch all song
@@ -30,7 +32,7 @@ public class DatabaseThread extends Thread{
 	private BufferedReader in;
 	private PrintWriter out;
 
-	private boolean failed = false;
+	private ProgressDialog pd;
 
 	/**
 	 * Creates an instance of database thread with the specified settings
@@ -39,17 +41,18 @@ public class DatabaseThread extends Thread{
 	 * @param port
 	 * @param context activity the database is being accessed from
 	 */
-	public DatabaseThread(String address, int port, Context context){
+	public DatabaseThread(String address, int port, Context context, ProgressDialog pd){
 
 		this.address = address;
 		this.port = port;
 		this.context = context;
-
+		this.pd = pd;
+				
+		
 	}
 
 	@Override
 	public void run(){
-
 		// Establish socket connection
 		try{
 			sock = new Socket();
@@ -63,16 +66,16 @@ public class DatabaseThread extends Thread{
 
 			renewServer();
 			renewDatabase();
-
 		} catch(Exception e){
-			failed = true;
 			e.printStackTrace();
+			Toast.makeText(context, "Connection failed, check settings", Toast.LENGTH_LONG).show();
 		}
 		try{
 			sock.close();
 			in.close();
 			out.close();
 		} catch(Exception e){}
+		pd.dismiss();
 	}
 
 	/**
@@ -119,6 +122,7 @@ public class DatabaseThread extends Thread{
 			boolean nextSong = false;
 			while(count < response.size()){
 				String currentLine = response.get(count);
+				
 				if(currentLine.startsWith("directory: ")){
 					count++;continue;} // Skip directory lines
 				else if(currentLine.startsWith("file: ")){
@@ -139,7 +143,7 @@ public class DatabaseThread extends Thread{
 						currentLine.substring(7,currentLine.indexOf("/"));
 					}
 					else{
-						track = Integer.parseInt(currentLine.substring(7));
+						track = toInt(currentLine.substring(7));
 					}
 				}
 				count++;
@@ -147,6 +151,8 @@ public class DatabaseThread extends Thread{
 			}
 			songs.add(new MPCSong(file, time, artist, title, album, track));
 		}
+		
+		
 
 		SongDatabase db = new SongDatabase(context);
 		for(MPCSong song : songs){
@@ -154,9 +160,14 @@ public class DatabaseThread extends Thread{
 		}
 
 	}
-
-	public boolean failed(){
-		return failed;
+	
+	private static int toInt(String str){
+		try{
+			return Integer.parseInt(str);
+		}catch(NumberFormatException e){
+			Log.i("Metadata Error:" , "Tried to convert '" + str + "' to int.");
+			return 0;
+		}
 	}
-
+	
 }

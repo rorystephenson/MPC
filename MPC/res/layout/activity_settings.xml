@@ -1,76 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:background="#FFFFFF"
-    android:orientation="vertical" >
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
-    <include layout="@layout/navigation_menu" />
-    
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical" >
+    <PreferenceCategory
+        android:key="connection_category"
+        android:title="Connection" >
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="10dp" >
+        <EditTextPreference
+            android:inputType="textNoSuggestions"
+            android:key="address"
+            android:summary="MPD server IP address"
+            android:title="Address" />
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="fill_parent"
-                android:layout_weight="0.4"
-                android:text="@string/address"
-                android:textSize="20sp" />
+        <EditTextPreference
+            android:inputType="number"
+            android:key="port"
+            android:summary="MPD server port"
+            android:title="Port" />
+        
+        <EditTextPreference
+            android:inputType="textPassword"
+            android:key="password"
+            android:summary="MPD Server password (empty if none)"
+            android:title="Password" />
+    </PreferenceCategory>
 
-            <EditText
-                android:id="@+id/address"
-                android:layout_width="0dp"
-                android:layout_height="fill_parent"
-                android:layout_weight="0.6"
-                android:inputType="textNoSuggestions" />
-        </LinearLayout>
+    <PreferenceCategory
+        android:key="database_category"
+        android:title="Database">
+        
+        <Preference
+            android:key="renewDatabase"
+            android:title="Refresh Database" />
+    </PreferenceCategory>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="10dp" >
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="fill_parent"
-                android:layout_weight="0.4"
-                android:text="@string/port"
-                android:textSize="20sp" />
-
-            <EditText
-                android:id="@+id/port"
-                android:layout_width="0dp"
-                android:layout_height="fill_parent"
-                android:layout_weight="0.6"
-                android:inputType="number" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:orientation="horizontal"
-            android:padding="0dp" >
-
-            <Button
-                android:id="@+id/databaseButton"
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
-                android:layout_margin="5dp"
-                android:onClick="renewDatabase"
-                android:text="@string/databaseButton" />
-
-        </LinearLayout>
-    </LinearLayout>
-
-</LinearLayout>
+</PreferenceScreen>

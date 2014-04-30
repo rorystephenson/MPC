@@ -6,15 +6,11 @@
     android:background="#FFFFFF"
     android:orientation="vertical" >
 
-    <include layout="@layout/navigation_menu" />
-    
     <ListView
         android:id="@android:id/list"
         android:layout_width="fill_parent"
         android:layout_height="0dp"
         android:layout_weight="1" >
     </ListView>
-
-    <include layout="@layout/music_menu" />
 
 </LinearLayout>

@@ -22,9 +22,9 @@ public class StatusThread extends Thread{
 	private Socket sock;
 	private BufferedReader in;
 	private PrintWriter out;
-	
+
 	private MPCStatus status;
-	
+
 	private boolean failed = false;
 
 	public StatusThread(String address, int port){
@@ -41,7 +41,7 @@ public class StatusThread extends Thread{
 		try{
 			sock = new Socket();
 			sock.connect(new InetSocketAddress(address, port), MPC.TIMEOUT);
-			
+
 			in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 			out = new PrintWriter(sock.getOutputStream(), true);
 
@@ -52,25 +52,27 @@ public class StatusThread extends Thread{
 
 		} catch(Exception e){
 			failed = true;
+			e.printStackTrace();
 		}
 		try{
 			sock.close();
 			in.close();
 			out.close();
-		} catch(Exception e){}
+		} catch(Exception e){e.printStackTrace();}
 	}
 
 	/**
 	 * Determines whether a song is playing and whether the MPD server
-	 * is set to shuffle.
+	 * is set to shuffle. Also checks volume.
 	 * @throws IOException
 	 */
 	private void checkPlayingStatus() throws IOException {
 		out.println("status");
-
+		
 		boolean playing = false;
 		boolean shuffling = false;
-		
+		Integer currentVol = null;
+
 		String response;
 		while((response = in.readLine()) != null){
 			if(response.equals("OK")){break;}
@@ -82,8 +84,11 @@ public class StatusThread extends Thread{
 				int shuffleValue = Integer.parseInt(response.substring(8));
 				shuffling = shuffleValue == 1 ? true : false;
 			}
+			if(response.startsWith("volume: ")){
+				currentVol = Integer.parseInt(response.substring(8));
+			}
 		}
-		status = new MPCStatus(playing, shuffling);
+		status = new MPCStatus(playing, shuffling, currentVol);
 	}
 
 	/**
@@ -92,8 +97,13 @@ public class StatusThread extends Thread{
 	public MPCStatus getStatus(){
 		return status;
 	}
-	
+
 	public boolean failed(){
 		return failed;
+	}
+
+	public Integer getVolume() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

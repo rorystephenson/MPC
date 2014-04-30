@@ -1,7 +1,12 @@
 package thelollies.mpc.library;
 
 import java.util.List;
+
+import thelollies.mpc.Settings;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 /**
@@ -26,30 +31,27 @@ public class MPC {
 	 */
 	public MPC(Context context){
 		this.context = context;
-		SettingsDatabase settings = new SettingsDatabase(context);
-		this.address = settings.getAddress();
-		this.port = settings.getPort();
+
+		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+		this.address = sharedPref.getString("address", "");
+		this.port = Integer.parseInt(sharedPref.getString("port", "0"));
 	}
 
 	/**
 	 * Clears the database of songs on the device before asking MPD to renew its
 	 * database updates with the new one.
 	 */
-	public void renewDatabase(){
+	public void renewDatabase(Context context){
 		SongDatabase db = new SongDatabase(context);
 		db.clearSongs();
-		DatabaseThread thread = new DatabaseThread(address, port, context);
-		thread.start();
 
-		// Check if the connection succeeded
-		try{
-			thread.join();
-			if(thread.failed()){
-				Toast.makeText(context, "Connection failed, check settings", Toast.LENGTH_LONG).show();
-			}
-		} catch(Exception e){
-			e.printStackTrace();
-		}
+		ProgressDialog pd = new ProgressDialog(context);
+		pd.setMessage("Renewing Database...");
+		pd.setCancelable(false);
+		pd.show();
+
+		DatabaseThread thread = new DatabaseThread(address, port, context, pd);
+		thread.start();
 	}
 
 	/**
@@ -112,7 +114,7 @@ public class MPC {
 		} catch(Exception e){
 			e.printStackTrace();
 		}
-		
+
 		return null;
 	}
 
@@ -168,5 +170,23 @@ public class MPC {
 			sendMessage("random 0");
 		}
 	}
+
+	public Integer setVolume(int volume){
+		sendMessage("setvol " + volume);
+		MPCStatus status = getStatus();
+		return status != null ? status.volume : null;
+	}
+
+	public Integer changeVolume(int change) {
+		// Get initial volume
+		MPCStatus status = getStatus();
+		Integer currentVol = status != null ? status.volume : null;
+
+		// Set the volume or return null if volume couldn't be found
+		if(currentVol == null) return null;
+		return setVolume(currentVol + change);
+
+	}
+
 
 }

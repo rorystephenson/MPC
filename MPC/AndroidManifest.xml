@@ -9,7 +9,7 @@
 
     <uses-sdk
         android:minSdkVersion="11"
-        android:targetSdkVersion="17" />
+        android:targetSdkVersion="14" />
 
     <application
         android:allowBackup="true"
@@ -19,6 +19,12 @@
         <activity
             android:name="thelollies.mpc.SongList"
             android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="MPC" >
+            <intent-filter>
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="thelollies.mpc.TabContainer"
             android:label="MPC" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

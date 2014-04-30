@@ -6,6 +6,7 @@ import java.util.List;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -184,10 +185,12 @@ public class SongDatabase extends SQLiteOpenHelper{
 	 * @return List<MPCSong> of songs by the specified artist
 	 */
 	private List<MPCSong> getArtistSongsAlphabetical(String artist) {
+		artist = DatabaseUtils.sqlEscapeString(artist);
+		
 		List<MPCSong> songList = new ArrayList<MPCSong>();
 		// Select All Query
 		String selectQuery = "SELECT  * FROM " + TABLE_SONGS + " WHERE " + KEY_ARTIST + 
-				"='" + artist + "'" + " ORDER BY " + KEY_TITLE + " ASC";
+				"=" + artist + " ORDER BY " + KEY_TITLE + " ASC";
 
 		SQLiteDatabase db = this.getReadableDatabase();
 		Cursor cursor = db.rawQuery(selectQuery, null);
@@ -217,17 +220,18 @@ public class SongDatabase extends SQLiteOpenHelper{
 	 */
 	private List<MPCAlbum> getArtistAlbumsAlphabetical(String artist) {
 		List<MPCAlbum> albums = new ArrayList<MPCAlbum>();
+		String artistEscaped = DatabaseUtils.sqlEscapeString(artist);
+
 		// Select All Query
 		String selectQuery = "SELECT  * FROM " + TABLE_SONGS + " WHERE " + KEY_ARTIST + 
-				"='" + artist + "'" + " ORDER BY " + KEY_TITLE + " ASC";
+				"=" + artistEscaped + " ORDER BY " + KEY_TITLE + " ASC";
 
 		SQLiteDatabase db = this.getReadableDatabase();
 		Cursor cursor = db.rawQuery(selectQuery, null);
 
 		// looping through all rows and adding to list
 		if (cursor.moveToFirst()) {
-			MPCAlbum all = new MPCAlbum(artist, "All Songs", true);
-			albums.add(all);
+			albums.add(new MPCAlbum(artist, "All Songs", true));
 			do {
 				MPCAlbum album = new MPCAlbum(cursor.getString(2), cursor.getString(4));
 				if(albums.contains(album)){continue;} // Avoid duplicate entries
@@ -235,6 +239,9 @@ public class SongDatabase extends SQLiteOpenHelper{
 			} while (cursor.moveToNext());
 		}
 
+		// Don't include "All Songs" if there is only one album
+		if(albums.size() == 2) albums.remove(0);
+		
 		db.close();
 		// return contact list
 		return albums;
@@ -249,11 +256,13 @@ public class SongDatabase extends SQLiteOpenHelper{
 	 * @return List<MPCSong> songs by the specified artist in the specified album
 	 */
 	private List<MPCSong> getAlbumSongsByTrack(String artist, String album) {
+		artist = DatabaseUtils.sqlEscapeString(artist);
+		album = DatabaseUtils.sqlEscapeString(album);
 		List<MPCSong> songList = new ArrayList<MPCSong>();
 		// Select All Query
 		String selectQuery = "SELECT  * FROM " + TABLE_SONGS + " WHERE (" + KEY_ARTIST + 
-				"='" + artist + "' AND " + KEY_ALBUM + 
-				"='" + album + "')" + " ORDER BY " + KEY_TRACK_NO + " ASC";
+				"=" + artist + " AND " + KEY_ALBUM + 
+				"=" + album + ")" + " ORDER BY " + KEY_TRACK_NO + " ASC";
 
 		SQLiteDatabase db = this.getReadableDatabase();
 		Cursor cursor = db.rawQuery(selectQuery, null);
@@ -310,11 +319,11 @@ public class SongDatabase extends SQLiteOpenHelper{
 	}
 
 	/**
-	 * Processes a string query (artist names)
+	 * Processes an artist query (artist names)
 	 * @param query
 	 * @return artist names which match the query
 	 */
-	public List<String> processStringQuery(MPCQuery query) {
+	public List<String> processArtistQuery(MPCQuery query) {
 		if(query.getType() == MPCQuery.ALL_ARTISTS){
 			return getArtistsAlphabetical();
 		}
