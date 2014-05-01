@@ -9,8 +9,12 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import thelollies.mpc.Settings;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.SharedPreferences.Editor;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -26,7 +30,7 @@ public class DatabaseThread extends Thread{
 
 	private String address;
 	private int port;
-	private Context context;
+	private Activity activity;
 
 	private Socket sock;
 	private BufferedReader in;
@@ -39,13 +43,13 @@ public class DatabaseThread extends Thread{
 	 * 
 	 * @param address
 	 * @param port
-	 * @param context activity the database is being accessed from
+	 * @param activity activity the database is being accessed from
 	 */
-	public DatabaseThread(String address, int port, Context context, ProgressDialog pd){
+	public DatabaseThread(String address, int port, Activity activity, ProgressDialog pd){
 
 		this.address = address;
 		this.port = port;
-		this.context = context;
+		this.activity = activity;
 		this.pd = pd;
 				
 		
@@ -67,8 +71,13 @@ public class DatabaseThread extends Thread{
 			renewServer();
 			renewDatabase();
 		} catch(Exception e){
-			e.printStackTrace();
-			Toast.makeText(context, "Connection failed, check settings", Toast.LENGTH_LONG).show();
+			activity.runOnUiThread(new Runnable(){
+				@Override
+				public void run() {
+					Toast.makeText(activity, "Connection failed, check settings", Toast.LENGTH_LONG).show();
+				}
+				
+			});
 		}
 		try{
 			sock.close();
@@ -76,6 +85,9 @@ public class DatabaseThread extends Thread{
 			out.close();
 		} catch(Exception e){}
 		pd.dismiss();
+		Editor edit = PreferenceManager.getDefaultSharedPreferences(activity).edit();
+		edit.putString("renewDatabase", Long.toString(System.currentTimeMillis()));
+		edit.commit();
 	}
 
 	/**
@@ -154,7 +166,7 @@ public class DatabaseThread extends Thread{
 		
 		
 
-		SongDatabase db = new SongDatabase(context);
+		SongDatabase db = new SongDatabase(activity);
 		for(MPCSong song : songs){
 			db.insertSong(song);
 		}

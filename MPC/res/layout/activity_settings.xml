@@ -16,12 +16,7 @@
             android:key="port"
             android:summary="MPD server port"
             android:title="Port" />
-        
-        <EditTextPreference
-            android:inputType="textPassword"
-            android:key="password"
-            android:summary="MPD Server password (empty if none)"
-            android:title="Password" />
+
     </PreferenceCategory>
 
     <PreferenceCategory

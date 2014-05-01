@@ -2,10 +2,11 @@ package thelollies.mpc;
 
 
 import thelollies.mpc.library.MPC;
-import android.app.ProgressDialog;
+import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceManager;
 
 /**
  * This activity displays the app's settings and allows them to be 
@@ -32,5 +33,6 @@ public class Settings extends PreferenceActivity {
 		});
 	}
 
-
+	
+	
 }

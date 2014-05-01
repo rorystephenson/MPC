@@ -2,14 +2,19 @@ package thelollies.mpc;
 
 import java.util.HashMap;
 
+import thelollies.mpc.ReclickableTabHost.ClickSameTabListener;
+import thelollies.mpc.TabContainer.TabManager.TabInfo;
 import thelollies.mpc.library.MPC;
 import thelollies.mpc.library.MPCStatus;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
@@ -27,7 +32,8 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 
 // NOW:
-// Fix back button
+// Make tabs refresh when settings changed
+// If tab pressed when already in that tab, go back to top level of tab
 
 // FUTURE:
 // TODO add password ability to MPC
@@ -38,9 +44,9 @@ public class TabContainer extends SherlockFragmentActivity{
 	public static ListState playing;
 
 	// Tab containers
-	TabHost mTabHost;
+	ReclickableTabHost mTabHost;
 	TabManager mTabManager;
-	
+
 	private final static long VOLUME_DELAY = 4000;
 
 	private Dialog seekDialog;
@@ -48,13 +54,15 @@ public class TabContainer extends SherlockFragmentActivity{
 
 	public static final String TAB = "tab";
 
+	private OnSharedPreferenceChangeListener dbRenewListener;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		setTheme(R.style.Theme_Sherlock_Light_NoActionBar);
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.fragment_tabs);
-		mTabHost = (TabHost)findViewById(android.R.id.tabhost);
+		mTabHost = (ReclickableTabHost)findViewById(android.R.id.tabhost);
 		mTabHost.setup();
 
 		mTabManager = new TabManager(this, mTabHost, R.id.realtabcontent);
@@ -107,6 +115,31 @@ public class TabContainer extends SherlockFragmentActivity{
 			}
 			@Override public void onStartTrackingTouch(SeekBar seekBar) {}
 			@Override public void onStopTrackingTouch(SeekBar seekBar) {}
+		});
+
+
+		// Reload current tab
+		dbRenewListener = new OnSharedPreferenceChangeListener() {
+			@Override
+			public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+					String key) {
+				if(key.equals("renewDatabase"))
+					for(TabInfo ti : mTabManager.mTabs.values()){
+						if(ti != null && ti.fragment != null)
+							ti.fragment.dbRenewed();
+					}
+			}
+		};
+		PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(dbRenewListener);
+
+
+		mTabHost.setClickSameTabListener(new ClickSameTabListener() {
+
+			@Override
+			public void clickSameTab() {
+				ListFragment frag = mTabManager.mLastTab.fragment;
+				frag.navigateTop();
+			}
 		});
 	}
 
@@ -221,6 +254,7 @@ public class TabContainer extends SherlockFragmentActivity{
 				mActivity.getSupportFragmentManager().executePendingTransactions();
 			}
 		}
+
 	}
 
 
@@ -328,7 +362,7 @@ public class TabContainer extends SherlockFragmentActivity{
 			changeVolume(5);
 			return true;
 		case KeyEvent.KEYCODE_BACK:
-			if(!((ListFragment)mTabManager.mLastTab.fragment).navigateUp()){
+			if(!mTabManager.mLastTab.fragment.navigateUp()){
 				super.onBackPressed();
 				return false;
 			}

@@ -9,6 +9,7 @@ import thelollies.mpc.library.MPCSong;
 import thelollies.mpc.library.SongDatabase;
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,13 +23,14 @@ import com.actionbarsherlock.app.SherlockListFragment;
 public class ListFragment extends SherlockListFragment{
 
 	private ListState currentState;
-	
+	private boolean dbRenewed = false;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		Bundle extras = getArguments();
-		
+
 		// Create list of songs/artist names/albums specified in displaying query
 		String type = extras.getString(TabContainer.TAB);
 		if(type.equals("albums")){
@@ -40,18 +42,34 @@ public class ListFragment extends SherlockListFragment{
 		else{
 			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_SONGS));
 		}
-		
+
+
 		refreshList();
 	}
 
+	public void dbRenewed(){
+		dbRenewed = true;
+	}
 	
+	@Override
+	public void onResume() {
+		super.onResume();
+
+		// Refresh the list if the database was updated
+		if(dbRenewed){
+			refreshList();
+			dbRenewed = false;
+		}
+	}
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		return inflater.inflate(R.layout.activity_song_list, container, false);
 	}
-	
+
+
+
 	/**
 	 * Adapter for the listView which displays MPCSongs.
 	 * @author thelollies
@@ -168,7 +186,7 @@ public class ListFragment extends SherlockListFragment{
 		Object o = l.getItemAtPosition(position);
 
 		SherlockFragmentActivity activity = getSherlockActivity();
-		
+
 		if(o instanceof MPCSong){
 			MPC mpc = new MPC(activity);
 			if(!currentState.query.equals(TabContainer.playing)){
@@ -180,7 +198,7 @@ public class ListFragment extends SherlockListFragment{
 		}
 		else if(o instanceof MPCAlbum){
 			MPCAlbum album = (MPCAlbum) o;
-			
+
 			currentState.setY(getListView().getFirstVisiblePosition());
 			if(album.isAll()){
 				currentState = new ListState(currentState, new MPCQuery(MPCQuery.SONGS_BY_ARTIST, album.artist));
@@ -188,30 +206,30 @@ public class ListFragment extends SherlockListFragment{
 			else{
 				currentState = new ListState(currentState, new MPCQuery(MPCQuery.SONGS_BY_ALBUM_ARTIST, album.artist, album.title));
 			}
-			
+
 			refreshList();
 		}
 		else if(o instanceof String){
 			String artist = (String) o;
 			currentState.setY(getListView().getFirstVisiblePosition());
-			
+
 			currentState = new ListState(currentState, new MPCQuery(MPCQuery.ALBUMS_BY_ARTIST, artist));
-			
+
 			refreshList();
 		}
 		((TabContainer)getActivity()).updateButtons();
 		super.onListItemClick(l, v, position, id);super.onListItemClick(l, v, position, id);
 	}
-	
+
 	public void refreshList(){
 		int type = currentState.query.getType();
 		Context context = getSherlockActivity();
-		
-		
+
+
 		if(type == MPCQuery.ALL_SONGS || 
-		   type == MPCQuery.SONGS_BY_ALBUM_ARTIST ||
-		   type == MPCQuery.SONGS_BY_ARTIST){
- 			List<MPCSong> songs = new SongDatabase(context).processSongQuery(currentState.query);
+				type == MPCQuery.SONGS_BY_ALBUM_ARTIST ||
+				type == MPCQuery.SONGS_BY_ARTIST){
+			List<MPCSong> songs = new SongDatabase(context).processSongQuery(currentState.query);
 			MPCSongAdapter adapter = new MPCSongAdapter(context, R.layout.song_row, songs);
 			setListAdapter(adapter);
 		}
@@ -225,9 +243,9 @@ public class ListFragment extends SherlockListFragment{
 			MPCAlbumAdapter adapter = new MPCAlbumAdapter(context, R.layout.album_row, albums);
 			setListAdapter(adapter);
 		}
-		
+
 	}
-	
+
 	public boolean navigateUp(){
 		if(currentState.parent != null){
 			currentState = currentState.parent;
@@ -238,4 +256,16 @@ public class ListFragment extends SherlockListFragment{
 		return false;
 	}
 	
+	public void navigateTop(){
+		if(currentState.parent == null) return;
+		else if(currentState.parent.parent != null){
+			currentState = currentState.parent.parent;
+		}
+		else{
+			currentState = currentState.parent;
+		}
+		refreshList();
+		getListView().setSelection(0);
+	}
+
 }

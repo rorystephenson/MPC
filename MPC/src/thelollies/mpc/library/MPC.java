@@ -2,7 +2,7 @@ package thelollies.mpc.library;
 
 import java.util.List;
 
-import thelollies.mpc.Settings;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -34,14 +34,17 @@ public class MPC {
 
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
 		this.address = sharedPref.getString("address", "");
-		this.port = Integer.parseInt(sharedPref.getString("port", "0"));
+		this.port = 0;
+		try{
+			this.port = Integer.parseInt(sharedPref.getString("port", "0"));
+		}catch(NumberFormatException e){}
 	}
 
 	/**
 	 * Clears the database of songs on the device before asking MPD to renew its
 	 * database updates with the new one.
 	 */
-	public void renewDatabase(Context context){
+	public void renewDatabase(Activity context){
 		SongDatabase db = new SongDatabase(context);
 		db.clearSongs();
 

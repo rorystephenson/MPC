@@ -52,7 +52,6 @@ public class StatusThread extends Thread{
 
 		} catch(Exception e){
 			failed = true;
-			e.printStackTrace();
 		}
 		try{
 			sock.close();
