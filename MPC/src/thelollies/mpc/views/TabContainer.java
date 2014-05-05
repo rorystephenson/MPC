@@ -36,6 +36,10 @@ import com.actionbarsherlock.view.MenuItem;
 
 public class TabContainer extends SherlockFragmentActivity implements MPCListener, ClickSameTabListener{
 
+	// Keeps track of the last system time the connection error toast message
+	// was shown so that it isn't shown if it is already showing
+	public static long connErrLastShown = 0;
+
 	// Holds the current query being played
 	public static ListState playing;
 
@@ -95,7 +99,7 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 
 		// Set up volume controller
 		volumeDialog = new VolumeDialog(this, VOLUME_DELAY);
-		
+
 		// Add the drag listener on the volume bar
 		volumeDialog.setVolumeChangeListener(new OnSeekBarChangeListener(){
 			@Override
@@ -290,7 +294,7 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 			return true;
 		return super.onKeyUp(keyCode, event);
 	}
-	
+
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		// Ignore releasing of buttons
@@ -342,7 +346,10 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 	public void connectionFailed(final String message) {
 		this.runOnUiThread(new Runnable(){
 			@Override public void run() {
-				Toast.makeText(TabContainer.this, message, Toast.LENGTH_LONG).show();
+				if(System.currentTimeMillis() - connErrLastShown > 2000){
+					Toast.makeText(TabContainer.this, message, Toast.LENGTH_SHORT).show();
+					connErrLastShown = System.currentTimeMillis();
+				}
 			}});
 	}
 

@@ -57,7 +57,10 @@ public class Settings extends PreferenceActivity implements MPCDatabaseListener,
 		if(databaseRenewDialog != null) databaseRenewDialog.dismiss();
 		this.runOnUiThread(new Runnable(){
 			@Override public void run() {
+				if(TabContainer.connErrLastShown - System.currentTimeMillis() > 2000){
 				Toast.makeText(Settings.this, message, Toast.LENGTH_LONG).show();
+					TabContainer.connErrLastShown = System.currentTimeMillis();
+				}
 			}});		
 	}
 
