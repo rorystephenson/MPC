@@ -1,4 +1,4 @@
-package thelollies.mpc;
+package thelollies.mpc.views;
 
 import android.content.Context;
 import android.util.AttributeSet;

@@ -18,7 +18,7 @@
 */
 -->
 
-<thelollies.mpc.ReclickableTabHost
+<thelollies.mpc.views.ReclickableTabHost
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/tabhost"
     android:layout_width="match_parent"
@@ -52,4 +52,4 @@
         
     </LinearLayout>
 
-</thelollies.mpc.ReclickableTabHost>
+</thelollies.mpc.views.ReclickableTabHost>

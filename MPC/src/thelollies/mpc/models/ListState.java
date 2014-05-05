@@ -1,6 +1,6 @@
-package thelollies.mpc;
+package thelollies.mpc.models;
 
-import thelollies.mpc.library.MPCQuery;
+import mpc.MPCQuery;
 
 public class ListState{
 	public final ListState parent;

@@ -1,4 +1,4 @@
-package thelollies.mpc.library;
+package thelollies.mpc.database;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +9,7 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import mpc.*;
 
 /**
  * SongDatabase is an interface for the database of songs held
@@ -18,7 +19,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  * @author thelollies
  */
 
-public class SongDatabase extends SQLiteOpenHelper{
+public class SongDatabase extends SQLiteOpenHelper implements MusicDatabase{
 
 	// Database name and version
 	private static final String DATABASE_NAME = "songDatabase.db";
@@ -35,6 +36,8 @@ public class SongDatabase extends SQLiteOpenHelper{
 	private static final String KEY_ALBUM = "album";
 	private static final String KEY_TRACK_NO = "track_number";
 
+	private SQLiteDatabase addSongDB;
+	
 	/**
 	 * Creates an instance of SongDatabase in the context of the
 	 * specified activity.
@@ -57,6 +60,7 @@ public class SongDatabase extends SQLiteOpenHelper{
 				+ KEY_TRACK_NO + " INTEGER" + ")";
 
 		try{db.execSQL(CREATE_CONTACTS_TABLE);}catch(Exception e){e.printStackTrace();}
+		// TODO close database here?
 	}
 
 	/**
@@ -72,26 +76,6 @@ public class SongDatabase extends SQLiteOpenHelper{
 	}
 
 	/**
-	 * Inserts the specified song in the database
-	 * @param song
-	 */
-	public void insertSong(MPCSong song) {
-		SQLiteDatabase db = this.getWritableDatabase();
-
-		ContentValues values = new ContentValues();
-		values.put(KEY_FILE, song.file);
-		values.put(KEY_TIME, song.time);
-		values.put(KEY_ARTIST, song.artist);
-		values.put(KEY_ALBUM, song.album);
-		values.put(KEY_TITLE, song.title);
-		values.put(KEY_TRACK_NO, song.track);
-
-		// Inserting Row
-		db.insert(TABLE_SONGS, null, values);
-		db.close(); // Closing database connection
-	}
-
-	/**
 	 * Queries the database for all songs and returns a list of the songs in
 	 * alphabetical order (by songs name)
 	 * 
@@ -104,7 +88,7 @@ public class SongDatabase extends SQLiteOpenHelper{
 
 		SQLiteDatabase db = this.getReadableDatabase();
 		Cursor cursor = db.rawQuery(selectQuery, null);
-
+		
 		// looping through all rows and adding to list
 		if (cursor.moveToFirst()) {
 			do {
@@ -115,7 +99,7 @@ public class SongDatabase extends SQLiteOpenHelper{
 				songList.add(song);
 			} while (cursor.moveToNext());
 		}
-
+		cursor.close();
 		db.close();
 		// return contact list
 		return songList;
@@ -143,6 +127,7 @@ public class SongDatabase extends SQLiteOpenHelper{
 			} while (cursor.moveToNext());
 		}
 
+		cursor.close();
 		db.close();
 		// return contact list
 		return artistList;
@@ -172,6 +157,7 @@ public class SongDatabase extends SQLiteOpenHelper{
 			} while (cursor.moveToNext());
 		}
 
+		cursor.close();
 		db.close();
 		// return contact list
 		return albumList;
@@ -206,6 +192,7 @@ public class SongDatabase extends SQLiteOpenHelper{
 			} while (cursor.moveToNext());
 		}
 
+		cursor.close();
 		db.close();
 		// return contact list
 		return songList;
@@ -242,6 +229,7 @@ public class SongDatabase extends SQLiteOpenHelper{
 		// Don't include "All Songs" if there is only one album
 		if(albums.size() == 2) albums.remove(0);
 		
+		cursor.close();
 		db.close();
 		// return contact list
 		return albums;
@@ -278,6 +266,7 @@ public class SongDatabase extends SQLiteOpenHelper{
 			} while (cursor.moveToNext());
 		}
 
+		cursor.close();
 		db.close();
 		// return contact list
 		return songList;
@@ -330,15 +319,55 @@ public class SongDatabase extends SQLiteOpenHelper{
 		return null;
 	}
 
-	/**
-	 * Clears all songs from the database
-	 */
-	public void clearSongs(){
-		SQLiteDatabase db = this.getWritableDatabase();
-
-		// Delete old settings
+	@Override
+	public void clear() {
+		SQLiteDatabase db;
+		boolean renewingDB = false;
+		if(addSongDB != null){
+			db = addSongDB;
+			renewingDB = true;
+		}
+		else{
+			db = getWritableDatabase();
+		}
+		// Delete all music
 		db.delete(TABLE_SONGS, null, null);
-		db.close();
+		
+		// Don't close the database since we are about to write to it
+		if(!renewingDB) db.close();		
+	}
+
+	@Override
+	public void addSong(MPCSong song) {
+
+		ContentValues values = new ContentValues();
+		values.put(KEY_FILE, song.file);
+		values.put(KEY_TIME, song.time);
+		values.put(KEY_ARTIST, song.artist);
+		values.put(KEY_ALBUM, song.album);
+		values.put(KEY_TITLE, song.title);
+		values.put(KEY_TRACK_NO, song.track);
+
+		// Inserting Row
+		addSongDB.insert(TABLE_SONGS, null, values);
+	}
+
+	@Override
+	public void startTransaction() {
+		addSongDB = getWritableDatabase();
+		addSongDB.beginTransaction();
+	}
+
+	@Override
+	public void setTransactionSuccessful() {
+		addSongDB.setTransactionSuccessful();
+	}
+
+	@Override
+	public void endTransaction() {
+		addSongDB.endTransaction();
+		addSongDB.close(); // Closing database connection
+		addSongDB = null;
 	}
 
 }

@@ -1,66 +1,73 @@
-package thelollies.mpc;
+package thelollies.mpc.views;
 
 import java.util.HashMap;
 
-import thelollies.mpc.ReclickableTabHost.ClickSameTabListener;
-import thelollies.mpc.TabContainer.TabManager.TabInfo;
-import thelollies.mpc.library.MPC;
-import thelollies.mpc.library.MPCStatus;
-import android.app.Dialog;
+import mpc.MPC;
+import mpc.MPCListener;
+import mpc.MPCStatus;
+import thelollies.mpc.R;
+import thelollies.mpc.database.SongDatabase;
+import thelollies.mpc.models.ListState;
+import thelollies.mpc.views.ReclickableTabHost.ClickSameTabListener;
+import thelollies.mpc.views.TabContainer.TabManager.TabInfo;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TabHost;
+import android.widget.Toast;
 
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 
-// NOW:
-// Make tabs refresh when settings changed
-// If tab pressed when already in that tab, go back to top level of tab
-
+// TODO NOW:
+// Check whether MPD is completing it's db update before read the new songs in
 // FUTURE:
 // TODO add password ability to MPC
 
-public class TabContainer extends SherlockFragmentActivity{
+public class TabContainer extends SherlockFragmentActivity implements MPCListener, ClickSameTabListener{
 
 	// Holds the current query being played
 	public static ListState playing;
 
-	// Tab containers
+	// Tab related variables
 	ReclickableTabHost mTabHost;
 	TabManager mTabManager;
-
-	private final static long VOLUME_DELAY = 4000;
-
-	private Dialog seekDialog;
-	private final Handler seekDialogHandler = new Handler();
-
 	public static final String TAB = "tab";
 
-	private OnSharedPreferenceChangeListener dbRenewListener;
+	// Volume related variables
+	private final static long VOLUME_DELAY = 4000;
+	private VolumeDialog volumeDialog;
+	private long lastVolChange = 0;
+
+	// MPC library instance for communicating with MPD server
+	protected static MPC mpc;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		setTheme(R.style.Theme_Sherlock_Light_NoActionBar);
 		super.onCreate(savedInstanceState);
 
+		// Set up mpc instance
+		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+		String address = sharedPref.getString("address", "");
+		int port = 0;
+		try{
+			port = Integer.parseInt(sharedPref.getString("port", "0"));
+		}catch(NumberFormatException e){}
+		if (mpc == null) mpc = new MPC(address, port, 1000, new SongDatabase(this));
+		mpc.setMPCListener(this);
+
+		// Set up tabs
 		setContentView(R.layout.fragment_tabs);
 		mTabHost = (ReclickableTabHost)findViewById(android.R.id.tabhost);
 		mTabHost.setup();
@@ -68,12 +75,10 @@ public class TabContainer extends SherlockFragmentActivity{
 		mTabManager = new TabManager(this, mTabHost, R.id.realtabcontent);
 
 		Bundle bndlSongs = new Bundle();
-		bndlSongs.putString(TAB, "songs");
-
 		Bundle bndlArtists = new Bundle();
-		bndlArtists.putString(TAB, "artists");
-
 		Bundle bndlAlbums = new Bundle();
+		bndlSongs.putString(TAB, "songs");
+		bndlArtists.putString(TAB, "artists");
 		bndlAlbums.putString(TAB, "albums");
 
 		mTabManager.addTab(mTabHost.newTabSpec("songs").setIndicator("Songs"),
@@ -83,70 +88,36 @@ public class TabContainer extends SherlockFragmentActivity{
 		mTabManager.addTab(mTabHost.newTabSpec("albums").setIndicator("Albums"),
 				ListFragment.class, bndlAlbums);
 
+		// Resumes the last tab
 		if (savedInstanceState != null) {
 			mTabHost.setCurrentTabByTag(savedInstanceState.getString("tab"));
 		}
 
-		seekDialog = new Dialog(this);
-		seekDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-		LayoutInflater inflater = (LayoutInflater)this.getSystemService(LAYOUT_INFLATER_SERVICE);
-		View layout = inflater.inflate(R.layout.seek_dialog, (ViewGroup)findViewById(R.id.your_dialog_root_element));
-		seekDialog.setContentView(layout);
-
-		seekDialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
-			@Override public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-				return TabContainer.this.onKeyDown(keyCode, event);
-			}});
-
-		// Add the drag listener on the seek bar
-		SeekBar bar = (SeekBar)seekDialog.findViewById(R.id.volume_seek);
-		bar.setOnSeekBarChangeListener(new OnSeekBarChangeListener(){
+		// Set up volume controller
+		volumeDialog = new VolumeDialog(this, VOLUME_DELAY);
+		
+		// Add the drag listener on the volume bar
+		volumeDialog.setVolumeChangeListener(new OnSeekBarChangeListener(){
 			@Override
 			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 				if(fromUser){
-					Integer newVol = new MPC(TabContainer.this).setVolume(progress);
-					if(newVol != null) seekBar.setProgress(newVol);
-					seekDialogHandler.removeCallbacksAndMessages(null);
-					seekDialogHandler.postDelayed(new Thread(){
-						@Override public void run() {
-							seekDialog.hide();
-						}}, VOLUME_DELAY);
+					mpc.setVolume(progress);
+					lastVolChange = System.currentTimeMillis();
+					mpc.requestStatus();
 				}
 			}
 			@Override public void onStartTrackingTouch(SeekBar seekBar) {}
 			@Override public void onStopTrackingTouch(SeekBar seekBar) {}
 		});
 
-
-		// Reload current tab
-		dbRenewListener = new OnSharedPreferenceChangeListener() {
-			@Override
-			public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-					String key) {
-				if(key.equals("renewDatabase"))
-					for(TabInfo ti : mTabManager.mTabs.values()){
-						if(ti != null && ti.fragment != null)
-							ti.fragment.dbRenewed();
-					}
-			}
-		};
-		PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(dbRenewListener);
-
-
-		mTabHost.setClickSameTabListener(new ClickSameTabListener() {
-
-			@Override
-			public void clickSameTab() {
-				ListFragment frag = mTabManager.mLastTab.fragment;
-				frag.navigateTop();
-			}
-		});
+		// Set the listener for clicking the current tab
+		mTabHost.setClickSameTabListener(this);
 	}
 
 	@Override
 	public void onPostCreate(Bundle savedInstanceState){
 		super.onPostCreate(savedInstanceState);
-		updateButtons();
+		mpc.requestStatus();
 	}
 
 	@Override
@@ -264,7 +235,8 @@ public class TabContainer extends SherlockFragmentActivity{
 	 * @param v
 	 */
 	public void rewind(View v){
-		new MPC(this).previous();
+		mpc.previous();
+		mpc.requestStatus();
 	}
 
 	/**
@@ -272,7 +244,8 @@ public class TabContainer extends SherlockFragmentActivity{
 	 * @param v
 	 */
 	public void fastForward(View v){
-		new MPC(this).next();
+		mpc.next();
+		mpc.requestStatus();
 	}
 
 	/**
@@ -282,21 +255,14 @@ public class TabContainer extends SherlockFragmentActivity{
 	 */
 	public void playPause(View v){
 
-		MPC mpc = new MPC(this);
-		Object tag = v.getTag(R.id.playPauseButton);
-		if(tag == null) {
-			updateButtons();
-			tag = v.getTag(R.id.playPauseButton);
-		}
-
-		if(v.getTag(R.id.playPauseButton).equals("play")){
+		if(v.getTag().equals("play")){
 			mpc.play();
 		}
 		else{
 			mpc.pause();
 		}
 
-		updateButtons();
+		mpc.requestStatus();
 	}
 
 	/**
@@ -304,56 +270,32 @@ public class TabContainer extends SherlockFragmentActivity{
 	 *  @param v
 	 */
 	public void shuffleToggle(View v){
-		MPC mpc = new MPC(this);
-
-		if(v.getTag(R.id.shuffleButton).equals("on")){
+		if(v.getTag().equals("on")){
 			mpc.shuffle(false);
 		}
 		else{
 			mpc.shuffle(true);
 		}
 
-		updateButtons();
+		mpc.requestStatus();
 	}
 
 	public void returnToPlaying(View v){
 		mTabManager.mLastTab.fragment.navigateUp();
 	}
 
-	/**
-	 * If music is playing show the pause button, if paused show the play button.
-	 */
-	public void updateButtons() {
-		MPC mpc = new MPC(this);
-		MPCStatus status = mpc.getStatus();
-
-		if(status == null){return;}
-
-		View playPauseView = findViewById(R.id.playPauseButton);
-		if(status.playing){
-			playPauseView.setBackgroundResource(R.drawable.pause);
-			playPauseView.setTag(R.id.playPauseButton, "pause");
-		} else{
-			playPauseView.setBackgroundResource(R.drawable.play);
-			playPauseView.setTag(R.id.playPauseButton, "play");
-		}
-
-		View shuffleBtn = findViewById(R.id.shuffleButton);
-		if(status.shuffling){
-			shuffleBtn.setBackgroundResource(R.drawable.shuffle);
-			shuffleBtn.setTag(R.id.shuffleButton, "on");
-
-		} else{
-			shuffleBtn.setBackgroundResource(R.drawable.shuffle_off);
-			shuffleBtn.setTag(R.id.shuffleButton, "off");
-		}
+	@Override
+	public boolean onKeyUp(int keyCode, KeyEvent event) {
+		if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP)
+			return true;
+		return super.onKeyUp(keyCode, event);
 	}
-
-
-
+	
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		//super.onKeyDown(keyCode, event);
+		// Ignore releasing of buttons
+		if(event.getAction() != KeyEvent.ACTION_DOWN) return true;
+
 		switch(keyCode){
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
 			changeVolume(-5);
@@ -368,23 +310,14 @@ public class TabContainer extends SherlockFragmentActivity{
 			}
 			return true;
 		default:
-			return false;
+			return super.onKeyDown(keyCode, event);
 		}
 	}
 
 	private void changeVolume(int change){
-		Integer vol = new MPC(this).changeVolume(change);
-		if(vol != null){
-			SeekBar bar = (SeekBar)seekDialog.findViewById(R.id.volume_seek);
-			bar.setProgress(vol);
-			seekDialog.show();
-
-			if(seekDialog.isShowing()){seekDialogHandler.removeCallbacksAndMessages(null);}
-			seekDialogHandler.postDelayed(new Thread(){
-				@Override public void run() {
-					seekDialog.hide();
-				}}, VOLUME_DELAY);
-		}
+		mpc.changeVolume(change);
+		lastVolChange = System.currentTimeMillis();
+		mpc.requestStatus();
 	}
 
 	@Override
@@ -403,7 +336,62 @@ public class TabContainer extends SherlockFragmentActivity{
 		default:
 			return super.onOptionsItemSelected(item); 
 		}
+	}
 
+	@Override
+	public void connectionFailed(final String message) {
+		this.runOnUiThread(new Runnable(){
+			@Override public void run() {
+				Toast.makeText(TabContainer.this, message, Toast.LENGTH_LONG).show();
+			}});
+	}
+
+	@Override
+	public void databaseUpdated() {
+		for(TabInfo ti : mTabManager.mTabs.values()){
+			if(ti != null && ti.fragment != null)
+				ti.fragment.dbRenewed();
+		}
+	}
+
+	@Override
+	public void statusUpdate(final MPCStatus newStatus) {
+		runOnUiThread(new Runnable(){
+			@Override public void run(){
+				if(newStatus == null){return;}
+
+				View playPauseView = findViewById(R.id.playPauseButton);
+				if(newStatus.playing){
+					playPauseView.setBackgroundResource(R.drawable.pause);
+					playPauseView.setTag("pause");
+				} else{
+					playPauseView.setBackgroundResource(R.drawable.play);
+					playPauseView.setTag("play");
+				}
+
+				View shuffleBtn = findViewById(R.id.shuffleButton);
+				if(newStatus.shuffling){
+					shuffleBtn.setBackgroundResource(R.drawable.shuffle);
+					shuffleBtn.setTag("on");
+				} else{
+					shuffleBtn.setBackgroundResource(R.drawable.shuffle_off);
+					shuffleBtn.setTag("off");
+				}
+
+				final SeekBar volumeBar = volumeDialog.volumeBar();
+				if(System.currentTimeMillis() - lastVolChange <= 1000){
+					volumeBar.setProgress(newStatus.volume);
+					volumeDialog.show();
+				}
+			}
+		});
+
+	}
+
+	@Override
+	public void clickSameTab() {
+		ListFragment frag = mTabManager.mLastTab.fragment;
+		frag.navigateTop();
 	}
 
 }

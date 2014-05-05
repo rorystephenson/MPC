@@ -1,15 +1,13 @@
-package thelollies.mpc;
+package thelollies.mpc.views;
 
 import java.util.List;
 
-import thelollies.mpc.library.MPC;
-import thelollies.mpc.library.MPCAlbum;
-import thelollies.mpc.library.MPCQuery;
-import thelollies.mpc.library.MPCSong;
-import thelollies.mpc.library.SongDatabase;
+import thelollies.mpc.R;
+import thelollies.mpc.database.SongDatabase;
+import thelollies.mpc.models.ListState;
+import mpc.*;
 import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,11 +22,14 @@ public class ListFragment extends SherlockListFragment{
 
 	private ListState currentState;
 	private boolean dbRenewed = false;
+	private static SongDatabase songDatabase;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		if (songDatabase == null) songDatabase = new SongDatabase(getSherlockActivity());
+		
 		Bundle extras = getArguments();
 
 		// Create list of songs/artist names/albums specified in displaying query
@@ -188,13 +189,12 @@ public class ListFragment extends SherlockListFragment{
 		SherlockFragmentActivity activity = getSherlockActivity();
 
 		if(o instanceof MPCSong){
-			MPC mpc = new MPC(activity);
 			if(!currentState.query.equals(TabContainer.playing)){
 				List<MPCSong> songs = new SongDatabase(activity).processSongQuery(currentState.query);
-				mpc.enqueSongs(songs);
+				TabContainer.mpc.enqueSongs(songs);
 				TabContainer.playing = currentState;
 			}
-			mpc.play(position);
+			TabContainer.mpc.play(position);
 		}
 		else if(o instanceof MPCAlbum){
 			MPCAlbum album = (MPCAlbum) o;
@@ -217,7 +217,7 @@ public class ListFragment extends SherlockListFragment{
 
 			refreshList();
 		}
-		((TabContainer)getActivity()).updateButtons();
+		TabContainer.mpc.requestStatus();
 		super.onListItemClick(l, v, position, id);super.onListItemClick(l, v, position, id);
 	}
 

@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="thelollies.mpc.TabContainer"
+            android:name="thelollies.mpc.views.TabContainer"
             android:label="MPC" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,7 +32,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="thelollies.mpc.Settings"
+            android:name="thelollies.mpc.views.Settings"
             android:label="@string/settings" >
         </activity>
     </application>

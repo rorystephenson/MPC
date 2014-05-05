@@ -25,7 +25,7 @@
         android:layout_margin="0dp" >
 
         <Button
-            android:id="@+id/artistsButton"
+            android:id="@+id/rewindButton"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:background="@drawable/rewind"
@@ -38,6 +38,7 @@
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
             android:background="@drawable/play"
+            android:tag="play"
             android:onClick="playPause" />
 
         <Button
@@ -55,6 +56,7 @@
         android:layout_height="50dp"
         android:background="@drawable/shuffle_off"
         android:onClick="shuffleToggle"
-        android:layout_marginRight="5dp" />
+        android:layout_marginRight="5dp"
+        android:tag="on" />
 
 </RelativeLayout>
