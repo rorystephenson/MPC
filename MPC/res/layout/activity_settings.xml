@@ -3,29 +3,29 @@
 
     <PreferenceCategory
         android:key="connection_category"
-        android:title="Connection" >
+        android:title="@string/connection" >
 
         <EditTextPreference
             android:inputType="textNoSuggestions"
             android:key="address"
             android:summary="MPD server IP address"
-            android:title="Address" />
+            android:title="@string/address" />
 
         <EditTextPreference
             android:inputType="number"
             android:key="port"
             android:summary="MPD server port"
-            android:title="Port" />
+            android:title="@string/port" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
         android:key="database_category"
-        android:title="Database">
-        
+        android:title="@string/database">
+
         <Preference
             android:key="renewDatabase"
-            android:title="Refresh Database" />
+            android:title="@string/refreshDB" />
     </PreferenceCategory>
 
 </PreferenceScreen>

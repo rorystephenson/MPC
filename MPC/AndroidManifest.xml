@@ -19,13 +19,13 @@
         <activity
             android:name="thelollies.mpc.SongList"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="MPC" >
+            android:label="@string/app_name" >
             <intent-filter>
             </intent-filter>
         </activity>
         <activity
             android:name="thelollies.mpc.views.TabContainer"
-            android:label="MPC" >
+            android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
