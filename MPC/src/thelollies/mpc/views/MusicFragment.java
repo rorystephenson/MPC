@@ -1,13 +1,18 @@
 package thelollies.mpc.views;
 
+import java.io.Serializable;
 import java.util.List;
 
+import mpc.MPCAlbum;
+import mpc.MPCQuery;
+import mpc.MPCSong;
 import thelollies.mpc.R;
 import thelollies.mpc.database.SongDatabase;
 import thelollies.mpc.models.ListState;
-import mpc.*;
+import thelollies.mpc.views.ViewPagerAdapter.TabType;
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,40 +23,74 @@ import android.widget.TextView;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.app.SherlockListFragment;
 
-public class ListFragment extends SherlockListFragment{
+public class MusicFragment extends SherlockListFragment implements MPCFragment{
 
 	private ListState currentState;
 	private boolean dbRenewed = false;
 	private static SongDatabase songDatabase;
+	public final static String TAB_TYPE = "tabtype";
+	private final static String STATE = "state";
+
+	public static MusicFragment newInstance(TabType tabType){
+		MusicFragment listFragment = new MusicFragment();
+
+		// Supply tab type as an argument.
+		Bundle args = new Bundle();
+		args.putInt(TAB_TYPE, tabType.ordinal());
+		listFragment.setArguments(args);
+
+
+		return listFragment;
+	}
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		if (songDatabase == null) songDatabase = new SongDatabase(getSherlockActivity());
-		
-		Bundle extras = getArguments();
 
-		// Create list of songs/artist names/albums specified in displaying query
-		String type = extras.getString(TabContainer.TAB);
-		if(type.equals("albums")){
-			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ALBUMS));
-		}
-		else if(type.equals("artists")){
-			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ARTISTS));
+		Serializable s;
+		if(savedInstanceState != null &&
+				(s = savedInstanceState.getSerializable(STATE)) != null) {
+			currentState = (ListState)s;
 		}
 		else{
-			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_SONGS));
+			switch(TabType.values()[getArguments().getInt(TAB_TYPE)]){
+			case SONGS:
+				currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_SONGS));
+				break;
+			case ARTISTS:
+				currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ARTISTS));
+				break;
+			case ALBUMS:
+				currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ALBUMS));
+				break;
+			default:
+				currentState = null;
+				Log.e("MusicFragment", "Unknown tab type");
+				break;
+			}
 		}
+	}
 
-
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
 		refreshList();
+
 	}
 
 	public void dbRenewed(){
 		dbRenewed = true;
 	}
-	
+
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		if(currentState != null)
+			outState.putSerializable(STATE, currentState);
+		super.onSaveInstanceState(outState);
+	}
+
 	@Override
 	public void onResume() {
 		super.onResume();
@@ -62,11 +101,11 @@ public class ListFragment extends SherlockListFragment{
 			dbRenewed = false;
 		}
 	}
-	
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		return inflater.inflate(R.layout.activity_song_list, container, false);
+		return inflater.inflate(R.layout.fragment_music, container, false);
 	}
 
 
@@ -218,7 +257,7 @@ public class ListFragment extends SherlockListFragment{
 			refreshList();
 		}
 		TabContainer.mpc.requestStatus();
-		super.onListItemClick(l, v, position, id);super.onListItemClick(l, v, position, id);
+		super.onListItemClick(l, v, position, id);
 	}
 
 	public void refreshList(){
@@ -230,17 +269,17 @@ public class ListFragment extends SherlockListFragment{
 				type == MPCQuery.SONGS_BY_ALBUM_ARTIST ||
 				type == MPCQuery.SONGS_BY_ARTIST){
 			List<MPCSong> songs = new SongDatabase(context).processSongQuery(currentState.query);
-			MPCSongAdapter adapter = new MPCSongAdapter(context, R.layout.song_row, songs);
+			MPCSongAdapter adapter = new MPCSongAdapter(context, R.layout.row_song, songs);
 			setListAdapter(adapter);
 		}
 		else if(type == MPCQuery.ALL_ARTISTS){
 			List<String> artists = new SongDatabase(context).processArtistQuery(currentState.query);
-			MPCArtistAdapter adapter = new MPCArtistAdapter(context, R.layout.artist_row, artists);
+			MPCArtistAdapter adapter = new MPCArtistAdapter(context, R.layout.row_artist, artists);
 			setListAdapter(adapter);
 		}
 		else{
 			List<MPCAlbum> albums = new SongDatabase(context).processAlbumQuery(currentState.query);
-			MPCAlbumAdapter adapter = new MPCAlbumAdapter(context, R.layout.album_row, albums);
+			MPCAlbumAdapter adapter = new MPCAlbumAdapter(context, R.layout.row_album, albums);
 			setListAdapter(adapter);
 		}
 
@@ -255,7 +294,7 @@ public class ListFragment extends SherlockListFragment{
 		}
 		return false;
 	}
-	
+
 	public void navigateTop(){
 		if(currentState.parent == null) return;
 		else if(currentState.parent.parent != null){

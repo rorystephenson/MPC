@@ -1,8 +1,11 @@
 package thelollies.mpc.models;
 
+import java.io.Serializable;
+
 import mpc.MPCQuery;
 
-public class ListState{
+public class ListState implements Serializable{
+	private static final long serialVersionUID = 3L;
 	public final ListState parent;
 	public final MPCQuery query;
 	private int y;
