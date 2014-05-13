@@ -94,7 +94,7 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		actionBar.addTab(actionBar.newTab().setText("Songs").setTabListener(this));
 		actionBar.addTab(actionBar.newTab().setText("Artists").setTabListener(this));
 		actionBar.addTab(actionBar.newTab().setText("Albums").setTabListener(this));
-		actionBar.addTab(actionBar.newTab().setText("Settings").setTabListener(this));
+		actionBar.addTab(actionBar.newTab().setText("Search").setTabListener(this));
 		
 		// Set the last tab if it was saved
 		if (savedInstanceState != null) 
