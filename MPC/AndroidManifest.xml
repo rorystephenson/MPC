@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="thelollies.mpc"
-    android:versionCode="6"
-    android:versionName="1.42" >
+    android:versionCode="7"
+    android:versionName="2.0" >
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -16,13 +16,6 @@
         android:icon="@drawable/icon"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-        <activity
-            android:name="thelollies.mpc.SongList"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/app_name" >
-            <intent-filter>
-            </intent-filter>
-        </activity>
         <activity
             android:name="thelollies.mpc.views.TabContainer"
             android:label="@string/app_name" >
