@@ -27,6 +27,9 @@
         <activity
             android:name="thelollies.mpc.views.Settings"
             android:label="@string/settings" >
+            <meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value="thelollies.mpc.views.TabContainer" />
         </activity>
     </application>
 
