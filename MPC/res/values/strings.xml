@@ -14,5 +14,7 @@
     <string name="saveButton">Save</string>
     <string name="vinylIcon">Album</string>
     <string name="artistIcon">Artist</string>
+    <string name="search">Search</string>
+    <string name="limitSearchResults">Limit Search Results</string>
 
 </resources>
