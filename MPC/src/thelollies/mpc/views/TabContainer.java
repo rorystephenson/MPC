@@ -3,7 +3,10 @@ package thelollies.mpc.views;
 import java.util.HashMap;
 
 import mpc.MPC;
+import mpc.MPCAlbum;
+import mpc.MPCArtist;
 import mpc.MPCListener;
+import mpc.MPCSong;
 import mpc.MPCStatus;
 import thelollies.mpc.R;
 import thelollies.mpc.database.SongDatabase;
@@ -19,6 +22,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TabHost;
@@ -95,12 +99,12 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		actionBar.addTab(actionBar.newTab().setText("Artists").setTabListener(this));
 		actionBar.addTab(actionBar.newTab().setText("Albums").setTabListener(this));
 		actionBar.addTab(actionBar.newTab().setText("Search").setTabListener(this));
-		
+
 		// Set the last tab if it was saved
 		if (savedInstanceState != null) 
 			actionBar.setSelectedNavigationItem(savedInstanceState.getInt(TAB));
 
-		
+
 		// Set up mpc instance
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 		String address = sharedPref.getString("address", "");
@@ -111,6 +115,11 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		if (mpc == null) mpc = new MPC(address, port, 1000, new SongDatabase(this));
 		mpc.setMPCListener(this);
 
+
+	}
+
+	public ViewPager getPager(){
+		return mPager;
 	}
 
 	@Override
@@ -120,6 +129,12 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		if(volumeDialog == null){
 			createVolumeDialog();
 		}
+	}
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+		System.out.println("start");
 	}
 
 	private void createVolumeDialog(){
@@ -148,7 +163,6 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 			volumeDialog.dismiss();
 		volumeDialog = null;
 	}
-
 
 	@Override
 	public void onPostCreate(Bundle savedInstanceState){
@@ -442,5 +456,39 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 
 	@Override	public void onTabUnselected(Tab tab, FragmentTransaction ft) {}
 
+	public void show(MPCSong song) {
+		hideKeyboard();
 
+		MusicFragment songFragment = mPagerAdapter.getMusicFragment(0);
+		songFragment.setSelection(song);
+		mPager.setCurrentItem(0);
+	}
+
+	public void show(MPCArtist artist) {
+		hideKeyboard();
+
+		MusicFragment artistFragment = mPagerAdapter.getMusicFragment(1);
+		artistFragment.setSelection(artist);
+		mPager.setCurrentItem(1);
+	}
+
+	public void show(MPCAlbum album) {
+		hideKeyboard();
+
+		MusicFragment albumFragment = mPagerAdapter.getMusicFragment(2);
+		albumFragment.setSelection(album);
+		mPager.setCurrentItem(2);
+	}
+	
+	private void hideKeyboard(){
+		InputMethodManager inputManager = (InputMethodManager) this
+	            .getSystemService(Context.INPUT_METHOD_SERVICE);
+
+	    //check if no view has focus:
+	    View v=this.getCurrentFocus();
+	    if(v==null)
+	        return;
+
+	    inputManager.hideSoftInputFromWindow(v.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+	}
 }
