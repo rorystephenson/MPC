@@ -9,9 +9,12 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NavUtils;
 import android.widget.Toast;
+
+import com.actionbarsherlock.app.SherlockPreferenceActivity;
+import com.actionbarsherlock.view.MenuItem;
 
 /**
  * This activity displays the app's settings and allows them to be 
@@ -19,7 +22,7 @@ import android.widget.Toast;
  * @author thelollies
  */
 
-public class Settings extends PreferenceActivity implements 
+public class Settings extends SherlockPreferenceActivity implements 
 MPCDatabaseListener, OnPreferenceClickListener, OnSharedPreferenceChangeListener{
 
 	private ProgressDialog databaseRenewDialog;
@@ -28,7 +31,8 @@ MPCDatabaseListener, OnPreferenceClickListener, OnSharedPreferenceChangeListener
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.layout.fragment_settings);
-
+		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+		
 		TabContainer.mpc.setMPCDatabaseListener(this);
 
 		// Create click listener for database renewal
@@ -38,7 +42,20 @@ MPCDatabaseListener, OnPreferenceClickListener, OnSharedPreferenceChangeListener
 		PreferenceManager.getDefaultSharedPreferences(this).
 		registerOnSharedPreferenceChangeListener(this);
 	}
+	
 
+	@Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case android.R.id.home:
+            super.onBackPressed();
+            return true;
+        default:
+            return super.onOptionsItemSelected(item);
+        }
+    }
+	// TODO add the query limit value option
+	
 	@Override
 	public boolean onPreferenceClick(Preference arg0){
 		databaseRenewDialog = new ProgressDialog(Settings.this);
@@ -49,7 +66,7 @@ MPCDatabaseListener, OnPreferenceClickListener, OnSharedPreferenceChangeListener
 		TabContainer.mpc.renewDatabase();
 		return true;
 	}
-
+	
 	@Override
 	public void databaseUpdated() {
 		if(databaseRenewDialog != null){
