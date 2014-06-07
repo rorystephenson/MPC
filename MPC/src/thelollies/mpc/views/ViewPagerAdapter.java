@@ -33,6 +33,11 @@ public class ViewPagerAdapter extends FragmentPagerAdapter {
 	public ListFragment getFragment(int index){
 		return (ListFragment)fm.findFragmentByTag(makeFragmentName(R.id.pager, index));
 	}
+
+	public MusicFragment getMusicFragment(int index){
+		if(index < 0 || index >= 3) return null;
+		return (MusicFragment)getFragment(index);
+	}
 	
 	// Gets the tag of a fragment for use with retrieving the fragment
 	private static String makeFragmentName(int viewId, int index) {
