@@ -3,5 +3,7 @@
     <color name="lightGrey">#EFEFEF</color>
     <color name="mediumGrey">#DDDDDD</color>
     <color name="darkGrey">#666666</color>
+    <color name="white">#FFFFFF</color>
+    <color name="highlight">#CCF0FF</color>
 
 </resources>
