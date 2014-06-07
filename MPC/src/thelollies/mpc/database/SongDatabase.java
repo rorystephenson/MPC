@@ -439,61 +439,64 @@ public class SongDatabase extends SQLiteOpenHelper implements MusicDatabase{
 
 
 	public List<MPCMusicMeta> search(String query, int limit){
+		SQLiteDatabase db = getReadableDatabase();
 		List<MPCMusicMeta> musicMeta = new ArrayList<MPCMusicMeta>();
 
-		String songQuery = "SELECT * FROM ("+TABLE_SONGS+" LEFT JOIN "
-				+TABLE_ARTISTS+" ON "+TABLE_SONGS+"."+KEY_ARTIST_ID+" = "
-				+TABLE_ARTISTS+"."+KEY_ID+") AS Temp LEFT JOIN "
-				+TABLE_ALBUMS+" ON Temp."+KEY_ALBUM_ID+" = "+TABLE_ALBUMS+"."
-				+KEY_ID+" WHERE "+KEY_TITLE+" LIKE ? OR Temp."+KEY_NAME
-				+" LIKE ? OR "+TABLE_ALBUMS+"."+KEY_NAME+" LIKE ? "
-				+"ORDER BY "+KEY_TITLE;
-		
-		
-		
-		String queryPat = "%"+query+"%";
-		String[] parameters;
-		
-		// Handle option to have a limit or not
-		if(limit != -1){
-			songQuery += " ASC LIMIT ?";
-			parameters = new String[]{queryPat, queryPat, queryPat, String.valueOf(limit)};
-		}
-		else{
-			parameters = new String[]{queryPat, queryPat, queryPat};
-		}
-		
-		SQLiteDatabase db = getReadableDatabase();
-		Cursor cursor = db.rawQuery(songQuery, 
-				parameters);
+		String songQuery = "SELECT * FROM (songs LEFT JOIN artists ON "
+				+"songs.artist_id=artists.id) AS Temp LEFT JOIN "
+				+"albums ON Temp.album_id=albums.id WHERE "
+				+"title LIKE ? ORDER BY title ASC LIMIT ?";
 
+		String artistQuery = "SELECT name FROM artists WHERE name LIKE ? "
+				+"ORDER BY name ASC LIMIT ?";
+
+		String albumQuery = "SELECT albums.name, artists.name FROM "
+				+ "albums LEFT JOIN artists ON albums.artist_id=artists.id"
+				+" WHERE albums.name LIKE ? ORDER BY "
+				+ "albums.name ASC, artists.name ASC LIMIT ?";
+
+		String[] parameters = 
+				new String[]{"%"+query+"%", String.valueOf(limit)};
+
+		Cursor cursor = db.rawQuery(songQuery, parameters);
 		// looping through all rows and adding to list
 		if (cursor.moveToFirst()) {
 			do {
-				Pattern queryPattern = Pattern.compile(".*"+Pattern.quote(query)+".*", Pattern.CASE_INSENSITIVE);
-				
-				String artistStr = cursor.getString(8);
-				String albumStr = cursor.getString(10);
-				String songStr = cursor.getString(1);
-				if(queryPattern.matcher(songStr).find()){
-					MPCSong song = new MPCSong(cursor.getString(6), cursor.getInt(3), 
-							artistStr, songStr, albumStr,	cursor.getInt(2));
-					musicMeta.add(song);
-				}
-				if(queryPattern.matcher(albumStr).find()){
-					MPCAlbum album = new MPCAlbum(artistStr, albumStr);
-					if(!musicMeta.contains(album))
-						musicMeta.add(album);
-				}
-				if(queryPattern.matcher(artistStr).find()){
-					MPCArtist artist = new MPCArtist(artistStr);
-					if(!musicMeta.contains(artist))
-						musicMeta.add(artist);
-				}
+				MPCSong song = new MPCSong(cursor.getString(6), cursor.getInt(3), 
+						cursor.getString(8), cursor.getString(1), cursor.getString(10),	cursor.getInt(2));
+				musicMeta.add(song);
 			} while (cursor.moveToNext());
 		}
-
 		cursor.close();
+
+		// Get ready for next query if we haven't exceeded limit
+		limit -= musicMeta.size();
+		if(limit == 0){db.close();return musicMeta;}
+		parameters[1] = String.valueOf(limit);
+		cursor = db.rawQuery(artistQuery, parameters);
+
+		if (cursor.moveToFirst()) {
+			do {
+				MPCArtist artist = new MPCArtist(cursor.getString(0));
+				musicMeta.add(artist);
+			} while (cursor.moveToNext());
+		}
+		cursor.close();
+
+		// Get ready for next query if we haven't exceeded limit
+		limit -= musicMeta.size();
+		if(limit == 0){db.close();return musicMeta;}
+		parameters[1] = String.valueOf(limit);
+		cursor = db.rawQuery(albumQuery, parameters);
+
+		if (cursor.moveToFirst()) {
+			do {
+				MPCAlbum album = new MPCAlbum(cursor.getString(1), cursor.getString(0));
+				musicMeta.add(album);
+			} while (cursor.moveToNext());
+		}
+		cursor.close();
+
 		db.close();
 
 		return musicMeta;
