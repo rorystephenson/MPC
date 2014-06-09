@@ -114,7 +114,7 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
 		Object o = l.getItemAtPosition(position);
-		
+
 		if(o instanceof MPCSong){
 			if(!currentState.query.equals(TabContainer.playing)){
 				List<MPCSong> songs = songDatabase.processSongQuery(currentState.query);
@@ -195,36 +195,89 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 		refreshList();
 		getListView().setSelection(0);
 	}
-	
-	public void setSelection(MPCMusicMeta item){
-		if(item instanceof MPCSong){
-			
-			MPCSingleTypeAdapter<MPCSong> adapter = (MPCSingleTypeAdapter<MPCSong>)getListAdapter();
-			int index = adapter.indexOf(item);
-			
-			currentState.setY(index);
-		
-			adapter.flashItem(index);
-			getListView().setSelection(index);		
-		}
-		else if(item instanceof MPCArtist){
-			MPCArtist artist = (MPCArtist) item;
-			
-			// TODO set the y position of the parent list state
+
+	public void showInSongs(MPCSong song){
+		MPCSingleTypeAdapter<MPCSong> adapter = (MPCSingleTypeAdapter<MPCSong>)getListAdapter();
+		int index = adapter.indexOf(song);
+
+		currentState.setY(index);
+
+		adapter.flashItem(index);
+		getListView().setSelection(index);	
+	}
+
+	public void showInArtists(MPCMusicMeta music){
+		if(music instanceof MPCArtist){
+			MPCArtist artist = (MPCArtist) music;
+
 			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ARTISTS));
+			// set the y position of the parent list state
+			setStateYToItem(currentState, artist);
 			currentState = new ListState(currentState, new MPCQuery(MPCQuery.ALBUMS_BY_ARTIST, artist));
-			
+
 			refreshList();
 		}
-		else{
-			MPCAlbum album = (MPCAlbum) item;
-			
-			// TODO set the y position of the parent list state
+		else if(music instanceof MPCSong){
+			MPCSong song = (MPCSong)music;
+
+			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ARTISTS));
+			// set the y position of the parent list state
+			setStateYToItem(currentState, new MPCArtist(song.artist));
+			currentState = new ListState(currentState, new MPCQuery(MPCQuery.ALBUMS_BY_ARTIST, new MPCArtist(song.artist)));
+			// set the y position of the parent list state
+			setStateYToItem(currentState, new MPCAlbum(song.artist, song.album));
+			currentState =  new ListState(currentState, 
+					new MPCQuery(MPCQuery.SONGS_BY_ARTIST, new MPCAlbum(song.artist, song.album, true)));
+
+			refreshList();
+
+			MPCSingleTypeAdapter<MPCSong> adapter = (MPCSingleTypeAdapter<MPCSong>)getListAdapter();
+			int index = adapter.indexOf(song);
+
+			currentState.setY(index);
+
+			adapter.flashItem(index);
+			getListView().setSelection(index);	
+		}
+	}
+
+	public void showInAlbums(MPCMusicMeta music){
+		if(music instanceof MPCAlbum){
+			MPCAlbum album = (MPCAlbum) music;
+
 			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ALBUMS));
+			// set the y position of the parent list state
+			setStateYToItem(currentState, album);
 			currentState = new ListState(currentState, new MPCQuery(MPCQuery.SONGS_BY_ALBUM_ARTIST, album));
-			
+
 			refreshList();
 		}
+		else if(music instanceof MPCSong){
+			MPCSong song = (MPCSong)music;
+
+			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ALBUMS));
+			// set the y position of the parent list state
+			setStateYToItem(currentState, new MPCAlbum(song.artist, song.album));
+			currentState = new ListState(currentState, new MPCQuery(MPCQuery.SONGS_BY_ALBUM_ARTIST, 
+					new MPCAlbum(song.artist, song.album)));
+
+			refreshList();
+
+			MPCSingleTypeAdapter<MPCSong> adapter = (MPCSingleTypeAdapter<MPCSong>)getListAdapter();
+			int index = adapter.indexOf(song);
+
+			currentState.setY(index);
+
+			adapter.flashItem(index);
+			getListView().setSelection(index);
+		}
+	}
+
+	private void setStateYToItem(ListState state, MPCMusicMeta music){
+
+		MPCSingleTypeAdapter<MPCMusicMeta> adapter = (MPCSingleTypeAdapter<MPCMusicMeta>)getListAdapter();
+		state.setY(adapter.indexOf(music));
+
 	}
 
 }
