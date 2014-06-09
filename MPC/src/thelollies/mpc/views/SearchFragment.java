@@ -28,7 +28,6 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.TextView;
 
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.app.SherlockListFragment;
@@ -122,19 +121,25 @@ MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 	@Override
 	public void onAttach(Activity activity) {
 		if(searchLimitChanged){
-			TextView searchText = (TextView)activity.findViewById(R.id.search_text);
+			EditText searchText = (EditText)activity.findViewById(R.id.search_text);
 			setSearchText(searchText.getText().toString());
 			searchLimitChanged = false;
 		}
 		super.onAttach(activity);
 	}
 
-	private void setSearchText(String text){
-		TextView searchText = (TextView)getActivity().findViewById(R.id.search_text);
+	private void setSearchText(final String text){
+		final EditText searchText = (EditText)getActivity().findViewById(R.id.search_text);
 		searchText.setText(text);
 
 		// Place the cursor at the end
-		searchText.append("");
+		searchText.setText(text);
+		searchText.post(new Runnable() {
+		         @Override
+		         public void run() {
+		             searchText.setSelection(text.length());
+		         }
+		});
 	}
 	
 	// Unused methods required by TextWatcher
@@ -148,7 +153,7 @@ MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 			searchLimit = Integer.parseInt(sharedPreferences.getString("searchLimit", "10"));
 			if(isAdded()){
 				SherlockFragmentActivity activity = getSherlockActivity();
-				TextView searchText = (TextView)activity.findViewById(R.id.search_text);
+				EditText searchText = (EditText)activity.findViewById(R.id.search_text);
 				setSearchText(searchText.getText().toString());
 			}else{
 				searchLimitChanged = true;
