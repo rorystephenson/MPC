@@ -6,6 +6,7 @@ import mpc.MPC;
 import mpc.MPCAlbum;
 import mpc.MPCArtist;
 import mpc.MPCListener;
+import mpc.MPCMusicMeta;
 import mpc.MPCSong;
 import mpc.MPCStatus;
 import thelollies.mpc.R;
@@ -456,27 +457,24 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 
 	@Override	public void onTabUnselected(Tab tab, FragmentTransaction ft) {}
 
-	public void show(MPCSong song) {
+	public void showInSongs(MPCSong song){
 		hideKeyboard();
-
 		MusicFragment songFragment = mPagerAdapter.getMusicFragment(0);
-		songFragment.setSelection(song);
+		songFragment.showInSongs(song);
 		mPager.setCurrentItem(0);
 	}
-
-	public void show(MPCArtist artist) {
+	
+	public void showInArtists(MPCMusicMeta music){
 		hideKeyboard();
-
 		MusicFragment artistFragment = mPagerAdapter.getMusicFragment(1);
-		artistFragment.setSelection(artist);
+		artistFragment.showInArtists(music);
 		mPager.setCurrentItem(1);
 	}
-
-	public void show(MPCAlbum album) {
+	
+	public void showInAlbums(MPCMusicMeta music){
 		hideKeyboard();
-
 		MusicFragment albumFragment = mPagerAdapter.getMusicFragment(2);
-		albumFragment.setSelection(album);
+		albumFragment.showInAlbums(music);
 		mPager.setCurrentItem(2);
 	}
 	
