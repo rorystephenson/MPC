@@ -14,4 +14,8 @@
         <item>100</item>
     	<item>-1</item>
     </string-array>
+    <string-array name="search_song_menu">
+        <item>Show song in Artists</item>
+        <item>Show song in Albums</item>
+    </string-array>
 </resources>
