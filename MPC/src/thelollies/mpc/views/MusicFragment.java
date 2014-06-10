@@ -74,13 +74,13 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 			// Create a new ListState, initialisation depends on the type of tab.
 			switch(TabType.values()[getArguments().getInt(TAB_TYPE)]){
 			case SONGS:
-				currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_SONGS));
+				currentState = new ListState(null, MPCQuery.allSongsQuery());
 				break;
 			case ARTISTS:
-				currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ARTISTS));
+				currentState = new ListState(null, MPCQuery.allArtistsQuery());
 				break;
 			case ALBUMS:
-				currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ALBUMS));
+				currentState = new ListState(null, MPCQuery.allAlbumsQuery());
 				break;
 			default:
 				currentState = null;
@@ -146,10 +146,10 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 			// Store scroll position
 			currentState.setY(getListView().getFirstVisiblePosition());
 			if(album.isAll()){ // "All Songs" album
-				currentState = new ListState(currentState, new MPCQuery(MPCQuery.SONGS_BY_ARTIST, album));
+				currentState = new ListState(currentState,MPCQuery.songsByArtist(album));
 			}
 			else{ // Normal album
-				currentState = new ListState(currentState, new MPCQuery(MPCQuery.SONGS_BY_ALBUM_ARTIST, album));
+				currentState = new ListState(currentState, MPCQuery.songsByAlbumArtist(album));
 			}
 
 			refreshList();
@@ -159,7 +159,7 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 			MPCArtist artist = (MPCArtist) o;
 			currentState.setY(getListView().getFirstVisiblePosition());
 
-			currentState = new ListState(currentState, new MPCQuery(MPCQuery.ALBUMS_BY_ARTIST, artist));
+			currentState = new ListState(currentState, MPCQuery.albumsByArtist(artist));
 
 			refreshList();
 		}
@@ -253,24 +253,24 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 		if(music instanceof MPCArtist){
 			MPCArtist artist = (MPCArtist) music;
 
-			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ARTISTS));
+			currentState = new ListState(null, MPCQuery.allArtistsQuery());
 			// set the y position of the parent list state
 			setStateYToItem(currentState, artist);
-			currentState = new ListState(currentState, new MPCQuery(MPCQuery.ALBUMS_BY_ARTIST, artist));
+			currentState = new ListState(currentState, MPCQuery.albumsByArtist(artist));
 
 			refreshList();
 		}
 		else if(music instanceof MPCSong){
 			MPCSong song = (MPCSong)music;
 
-			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ARTISTS));
+			currentState = new ListState(null, MPCQuery.allArtistsQuery());
 			// set the y position of the parent list state
 			setStateYToItem(currentState, new MPCArtist(song.artist));
-			currentState = new ListState(currentState, new MPCQuery(MPCQuery.ALBUMS_BY_ARTIST, new MPCArtist(song.artist)));
+			currentState = new ListState(currentState, MPCQuery.albumsByArtist(new MPCArtist(song.artist)));
 			// set the y position of the parent list state
 			setStateYToItem(currentState, new MPCAlbum(song.artist, song.album));
 			currentState =  new ListState(currentState, 
-					new MPCQuery(MPCQuery.SONGS_BY_ARTIST, new MPCAlbum(song.artist, song.album, true)));
+					MPCQuery.songsByArtist(new MPCAlbum(song.artist, song.album, true)));
 
 			refreshList();
 
@@ -292,20 +292,20 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 		if(music instanceof MPCAlbum){
 			MPCAlbum album = (MPCAlbum) music;
 
-			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ALBUMS));
+			currentState = new ListState(null, MPCQuery.allAlbumsQuery());
 			// set the y position of the parent list state
 			setStateYToItem(currentState, album);
-			currentState = new ListState(currentState, new MPCQuery(MPCQuery.SONGS_BY_ALBUM_ARTIST, album));
+			currentState = new ListState(currentState, MPCQuery.songsByAlbumArtist(album));
 
 			refreshList();
 		}
 		else if(music instanceof MPCSong){
 			MPCSong song = (MPCSong)music;
 
-			currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_ALBUMS));
+			currentState = new ListState(null, MPCQuery.allAlbumsQuery());
 			// set the y position of the parent list state
 			setStateYToItem(currentState, new MPCAlbum(song.artist, song.album));
-			currentState = new ListState(currentState, new MPCQuery(MPCQuery.SONGS_BY_ALBUM_ARTIST, 
+			currentState = new ListState(currentState, MPCQuery.songsByAlbumArtist( 
 					new MPCAlbum(song.artist, song.album)));
 
 			refreshList();
