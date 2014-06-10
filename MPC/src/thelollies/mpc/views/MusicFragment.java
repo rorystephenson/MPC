@@ -17,16 +17,21 @@ import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.ListView;
 
 import com.actionbarsherlock.app.SherlockListFragment;
 
+/**
+ * MusicFragment is a fragment containing a list of either MPCSong, MPCArtist or
+ * MPCAlbum. It allows navigation around the music in the SongDatabase as
+ * well as playback when a song is selected.
+ * @author Rory Stephenson
+ *
+ */
+// Suppress the warnings around casting the ListAdapter, as we always know what type it is
+@SuppressWarnings("unchecked")
 public class MusicFragment extends SherlockListFragment implements MPCFragment{
 
 	private ListState currentState;
@@ -35,6 +40,11 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 	public final static String TAB_TYPE = "tabtype";
 	private final static String STATE = "state";
 
+	/**
+	 * The constructor that should be used when creating a new MusicFragment
+	 * @param tabType
+	 * @return
+	 */
 	public static MusicFragment newInstance(TabType tabType){
 		MusicFragment listFragment = new MusicFragment();
 
@@ -51,14 +61,17 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		// Get database instance
 		if (songDatabase == null) songDatabase = new SongDatabase(getSherlockActivity());
 
+		// Loads ListState if one exists
 		Serializable s;
 		if(savedInstanceState != null &&
 				(s = savedInstanceState.getSerializable(STATE)) != null) {
 			currentState = (ListState)s;
 		}
 		else{
+			// Create a new ListState, initialisation depends on the type of tab.
 			switch(TabType.values()[getArguments().getInt(TAB_TYPE)]){
 			case SONGS:
 				currentState = new ListState(null, new MPCQuery(MPCQuery.ALL_SONGS));
@@ -89,6 +102,7 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
+		// Save the ListState
 		if(currentState != null)
 			outState.putSerializable(STATE, currentState);
 		super.onSaveInstanceState(outState);
@@ -108,6 +122,7 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
+		// Create the View
 		return inflater.inflate(R.layout.fragment_music, container, false);
 	}
 
@@ -115,6 +130,7 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 	public void onListItemClick(ListView l, View v, int position, long id) {
 		Object o = l.getItemAtPosition(position);
 
+		// Song clicked, play it
 		if(o instanceof MPCSong){
 			if(!currentState.query.equals(TabContainer.playing)){
 				List<MPCSong> songs = songDatabase.processSongQuery(currentState.query);
@@ -123,19 +139,22 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 			}
 			TabContainer.mpc.play(position);
 		}
+		// Album clicked, navigate into it
 		else if(o instanceof MPCAlbum){
 			MPCAlbum album = (MPCAlbum) o;
 
+			// Store scroll position
 			currentState.setY(getListView().getFirstVisiblePosition());
-			if(album.isAll()){
+			if(album.isAll()){ // "All Songs" album
 				currentState = new ListState(currentState, new MPCQuery(MPCQuery.SONGS_BY_ARTIST, album));
 			}
-			else{
+			else{ // Normal album
 				currentState = new ListState(currentState, new MPCQuery(MPCQuery.SONGS_BY_ALBUM_ARTIST, album));
 			}
 
 			refreshList();
 		}
+		// Album clicked, navigate into it
 		else if(o instanceof MPCArtist){
 			MPCArtist artist = (MPCArtist) o;
 			currentState.setY(getListView().getFirstVisiblePosition());
@@ -144,14 +163,20 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 
 			refreshList();
 		}
+		
+		// Request status of MPD server, playback buttons updated via the response
 		TabContainer.mpc.requestStatus();
 		super.onListItemClick(l, v, position, id);
 	}
 
+	/**
+	 * Refreshes the ListView according to the currentState's query.
+	 */
 	public void refreshList(){
 		int type = currentState.query.getType();
 		Context context = getSherlockActivity();
 
+		// Songs tab refresh
 		if(type == MPCQuery.ALL_SONGS || 
 				type == MPCQuery.SONGS_BY_ALBUM_ARTIST ||
 				type == MPCQuery.SONGS_BY_ARTIST){
@@ -160,12 +185,14 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 					new MPCSingleTypeAdapter<MPCSong>(context, R.layout.row_song, songs);
 			setListAdapter(adapter);
 		}
+		// Artists tab refresh
 		else if(type == MPCQuery.ALL_ARTISTS){
 			List<MPCArtist> artists = new SongDatabase(context).processArtistQuery(currentState.query);
 			MPCSingleTypeAdapter<MPCArtist> adapter = 
 					new MPCSingleTypeAdapter<MPCArtist>(context, R.layout.row_artist, artists);
 			setListAdapter(adapter);
 		}
+		// Albums tab refresh
 		else{
 			List<MPCAlbum> albums = new SongDatabase(context).processAlbumQuery(currentState.query);
 			MPCSingleTypeAdapter<MPCAlbum> adapter = 
@@ -174,6 +201,9 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 		}
 	}
 
+	/**
+	 * See interface
+	 */
 	public boolean navigateUp(){
 		if(currentState.parent != null){
 			currentState = currentState.parent;
@@ -184,6 +214,9 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 		return false;
 	}
 
+	/**
+	 * See interface
+	 */
 	public void navigateTop(){
 		if(currentState.parent == null) return;
 		else if(currentState.parent.parent != null){
@@ -196,16 +229,26 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 		getListView().setSelection(0);
 	}
 
+	/**
+	 * Shows the specified song in the ListView under the songs tab
+	 * @param song
+	 */
 	public void showInSongs(MPCSong song){
 		MPCSingleTypeAdapter<MPCSong> adapter = (MPCSingleTypeAdapter<MPCSong>)getListAdapter();
 		int index = adapter.indexOf(song);
 
 		currentState.setY(index);
 
+		// Flash the item to indicate it
 		adapter.flashItem(index);
+
 		getListView().setSelection(index);	
 	}
 
+	/**
+	 * Shows the specified music in the Artists tab ListView
+	 * @param music
+	 */
 	public void showInArtists(MPCMusicMeta music){
 		if(music instanceof MPCArtist){
 			MPCArtist artist = (MPCArtist) music;
@@ -241,6 +284,10 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 		}
 	}
 
+	/**
+	 * Show the specified music item in the Album tab's ListView
+	 * @param music
+	 */
 	public void showInAlbums(MPCMusicMeta music){
 		if(music instanceof MPCAlbum){
 			MPCAlbum album = (MPCAlbum) music;
@@ -273,6 +320,12 @@ public class MusicFragment extends SherlockListFragment implements MPCFragment{
 		}
 	}
 
+	/**
+	 * Helper method to set the Y position of a ListState to position of the specfied
+	 * MPCMusicMeta
+	 * @param state
+	 * @param music
+	 */
 	private void setStateYToItem(ListState state, MPCMusicMeta music){
 
 		MPCSingleTypeAdapter<MPCMusicMeta> adapter = (MPCSingleTypeAdapter<MPCMusicMeta>)getListAdapter();

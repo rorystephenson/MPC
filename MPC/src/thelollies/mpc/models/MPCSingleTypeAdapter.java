@@ -14,8 +14,10 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 /**
- * Adapter for the listView which displays MPCSongs.
- * @author thelollies
+ * Adapter for the listView which displays types that implement MPCMusicMeta.
+ * It can only display one of sub-type at a time, if multiple 
+ * are required in a single list the MPCMultiplTypeAdapter should be used
+ * @author Rory Stephenson
  *
  */
 public class MPCSingleTypeAdapter<T extends MPCMusicMeta> extends ArrayAdapter<T> {
@@ -37,6 +39,7 @@ public class MPCSingleTypeAdapter<T extends MPCMusicMeta> extends ArrayAdapter<T
 		ViewHolder holder = null;
 		MPCMusicMeta song = songs.get(position);
 
+		// Cannot recycle view, create a new one
 		if(convertView == null){
 			convertView = inflater.inflate(layout, null);
 			holder = new ViewHolder();
@@ -44,12 +47,14 @@ public class MPCSingleTypeAdapter<T extends MPCMusicMeta> extends ArrayAdapter<T
 			holder.textViewBottom = (TextView) convertView.findViewById(R.id.bottomtext);
 			convertView.setTag(holder);
 		}else{
+			// recycle view
 			holder = (ViewHolder)convertView.getTag();
 		}
 
 		holder.textViewTop.setText(song.getName());
 		holder.textViewBottom.setText(song.getDescription());
 
+		// Shows a flashing animation on a row if it's position matches flashIndex
 		if(position == flashIndex){
 			new HighlightRunnable(convertView, (Activity)getContext()).start();
 			flashIndex = -1;
@@ -62,15 +67,25 @@ public class MPCSingleTypeAdapter<T extends MPCMusicMeta> extends ArrayAdapter<T
 		return songs.indexOf(music);
 	}
 
+	/**
+	 * Mark a row to show a flashing animation, must call notifyDataSetChanged()
+	 * after for it to work.
+	 * @param index of row to animate
+	 */
 	public void flashItem(int index){
 		this.flashIndex = index;
 		notifyDataSetChanged();
 	}
+
+	/* Holds the components of a row to be reused in scrolling */	
 	private static class ViewHolder {
 		public TextView textViewTop;
 		public TextView textViewBottom;
 	}
 
+	/*Handles the actual execution of the animation. It does so by running a 
+	 * transition and undoing it twice. The transitions are fired on the
+	 * UI thread. */
 	private class HighlightRunnable extends Thread{
 		private View view;
 		private Activity activity;
@@ -80,6 +95,7 @@ public class MPCSingleTypeAdapter<T extends MPCMusicMeta> extends ArrayAdapter<T
 			this.activity = activity;
 		}
 
+		/* Runs the two flashes */		
 		@Override
 		public void run() {
 			TransitionDrawable t = (TransitionDrawable)view.getBackground();
@@ -87,6 +103,9 @@ public class MPCSingleTypeAdapter<T extends MPCMusicMeta> extends ArrayAdapter<T
 			oneFlash(t);
 		}
 
+		/* Executes a flash. This involves firing a transition,
+		 * pausing for 300ms so it can complete, and then reversing it before
+		 * waiting 300ms again. The transitions are fired on the UI Thread	 */
 		private void oneFlash(final TransitionDrawable t){
 			activity.runOnUiThread(new Runnable(){
 				public void run(){

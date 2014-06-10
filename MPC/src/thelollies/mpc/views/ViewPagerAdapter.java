@@ -5,6 +5,11 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.ListFragment;
 
+/**
+ * Holds fragments and facilitates transitions between them.
+ * @author Rory Stephenson
+ *
+ */
 public class ViewPagerAdapter extends FragmentPagerAdapter {
 
 	public static enum TabType {SONGS, ARTISTS, ALBUMS, SETTINGS};
@@ -34,6 +39,11 @@ public class ViewPagerAdapter extends FragmentPagerAdapter {
 		return (ListFragment)fm.findFragmentByTag(makeFragmentName(R.id.pager, index));
 	}
 
+	/**
+	 * @param index
+	 * @return the MusicFragment at the specified index or null if there is
+	 * not a MusicFragment at that index
+	 */
 	public MusicFragment getMusicFragment(int index){
 		if(index < 0 || index >= 3) return null;
 		return (MusicFragment)getFragment(index);

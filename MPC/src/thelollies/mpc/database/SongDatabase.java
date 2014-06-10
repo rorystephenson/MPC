@@ -2,7 +2,6 @@ package thelollies.mpc.database;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import mpc.MPCAlbum;
 import mpc.MPCArtist;
@@ -360,9 +359,14 @@ public class SongDatabase extends SQLiteOpenHelper implements MusicDatabase{
 		return null;
 	}
 
+	/**
+	 * Implementation of the MPClient clear function. It wipes the database
+	 */
 	@Override
 	public void clear() {
 		SQLiteDatabase db;
+		
+		// Used to check if a transaction is open and use it if so
 		boolean renewingDB = false;
 		if(addSongDB != null){
 			db = addSongDB;
@@ -380,6 +384,14 @@ public class SongDatabase extends SQLiteOpenHelper implements MusicDatabase{
 		if(!renewingDB) db.close();		
 	}
 
+	/**
+	 * Finds the primary key of an artist given it's name. If it exists it will
+	 * return the primary key of the artist with that name, otherwise a new artist
+	 * is created and it's primary key returned.
+	 * 
+	 * @param artist
+	 * @return artist primary key
+	 */
 	private Integer findArtistPK(String artist){
 		Cursor cursor = addSongDB.rawQuery("SELECT "+KEY_ID+" FROM " + TABLE_ARTISTS + 
 				" WHERE name=?", new String[]{artist});
@@ -395,6 +407,13 @@ public class SongDatabase extends SQLiteOpenHelper implements MusicDatabase{
 		return result;
 	}
 
+	/**
+	 * Returns the primary key of an album with matching album/artistFK otherwise
+	 * creates an album with specified album and artist foreign key.
+	 * @param album
+	 * @param artistFK
+	 * @return Primary key of specified album
+	 */
 	private Integer findAlbumPK(String album, int artistFK){
 		int result = -1;
 
@@ -416,10 +435,13 @@ public class SongDatabase extends SQLiteOpenHelper implements MusicDatabase{
 		return result;
 	}
 
+	/**
+	 * Adds a song to the database, creating artist/album entries if they don't exist.
+	 */
 	@Override
 	public void addSong(MPCSong song) {
 
-		// Creates the artist/ablum if they don't exist 
+		// Creates the artist/album if they don't exist 
 		// and gets a reference to them
 		int artistFK = findArtistPK(song.artist);
 		int albumFK = findAlbumPK(song.album, artistFK);
@@ -436,8 +458,14 @@ public class SongDatabase extends SQLiteOpenHelper implements MusicDatabase{
 		addSongDB.insert(TABLE_SONGS, null, values);
 	}
 
-
-
+	/**
+	 * Returns a list of music items which match the given query and limited by the
+	 * given limit. Search finds songs, artists then albums. If limit is set to -1 then
+	 * no limit is imposed.
+	 * @param query
+	 * @param limit
+	 * @return List<MPCMusicMeta> of matching music
+	 */
 	public List<MPCMusicMeta> search(String query, int limit){
 		SQLiteDatabase db = getReadableDatabase();
 		List<MPCMusicMeta> musicMeta = new ArrayList<MPCMusicMeta>();
@@ -502,17 +530,26 @@ public class SongDatabase extends SQLiteOpenHelper implements MusicDatabase{
 		return musicMeta;
 	}
 
+	/**
+	 * Starts a transaction
+	 */
 	@Override
 	public void startTransaction() {
 		addSongDB = getWritableDatabase();
 		addSongDB.beginTransaction();
 	}
 
+	/**
+	 * Commits a transaction
+	 */
 	@Override
 	public void setTransactionSuccessful() {
 		addSongDB.setTransactionSuccessful();
 	}
 
+	/**
+	 * Undoes the transaction
+	 */
 	@Override
 	public void endTransaction() {
 		addSongDB.endTransaction();

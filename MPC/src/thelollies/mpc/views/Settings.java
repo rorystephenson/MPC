@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NavUtils;
 import android.widget.Toast;
 
 import com.actionbarsherlock.app.SherlockPreferenceActivity;
@@ -44,6 +43,9 @@ MPCDatabaseListener, OnPreferenceClickListener, OnSharedPreferenceChangeListener
 	}
 	
 
+	/**
+	 * Home is pressed in the ActionBar, trigger back press
+	 */
 	@Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -54,19 +56,27 @@ MPCDatabaseListener, OnPreferenceClickListener, OnSharedPreferenceChangeListener
             return super.onOptionsItemSelected(item);
         }
     }
-	// TODO add the query limit value option
 	
+	/**
+	 * Database update selected
+	 */
 	@Override
 	public boolean onPreferenceClick(Preference arg0){
+		// Create progress dialog
 		databaseRenewDialog = new ProgressDialog(Settings.this);
 		databaseRenewDialog.setMessage("Renewing Database...");
 		databaseRenewDialog.setCancelable(false);
 		databaseRenewDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 		databaseRenewDialog.show();
+		
+		// Renew the database
 		TabContainer.mpc.renewDatabase();
 		return true;
 	}
 	
+	/**
+	 * Called when database update is complete, dismisses update progress dialog.
+	 */
 	@Override
 	public void databaseUpdated() {
 		if(databaseRenewDialog != null){
@@ -75,11 +85,19 @@ MPCDatabaseListener, OnPreferenceClickListener, OnSharedPreferenceChangeListener
 		}
 	}
 
+	/**
+	 * Called by MPClient when database update progress changes, reflects the
+	 * new progress in the progress dialog.
+	 */
 	@Override
 	public void databaseUpdateProgressChanged(int progress) {
 		databaseRenewDialog.setProgress(progress);
 	}
 
+	/**
+	 * Called when connection fails in MPClient. Dismisses update dialog if one
+	 * exists and shows a Toast message indicating the failed connection.
+	 */
 	@Override
 	public void connectionFailed(final String message) {
 		if(databaseRenewDialog != null){
@@ -95,6 +113,9 @@ MPCDatabaseListener, OnPreferenceClickListener, OnSharedPreferenceChangeListener
 			}});		
 	}
 
+	/**
+	 * Updates the MPClient if the address/port change
+	 */
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {

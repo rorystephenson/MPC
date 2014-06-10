@@ -1,10 +1,6 @@
 package thelollies.mpc.views;
 
-import java.util.HashMap;
-
 import mpc.MPC;
-import mpc.MPCAlbum;
-import mpc.MPCArtist;
 import mpc.MPCListener;
 import mpc.MPCMusicMeta;
 import mpc.MPCSong;
@@ -17,8 +13,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.view.KeyEvent;
@@ -26,7 +20,6 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
-import android.widget.TabHost;
 import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
@@ -36,9 +29,14 @@ import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 
-// TODO NOW:
+// TODO 
 // Check whether MPD is completing it's db update before read the new songs in
 
+/**
+ * TabContainer holds the tabs and facilitates navigation between them.
+ * @author Rory Stephenson
+ *
+ */
 public class TabContainer extends SherlockFragmentActivity implements MPCListener, TabListener{
 
 	// Keeps track of the last system time the connection error toast message
@@ -119,10 +117,6 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 
 	}
 
-	public ViewPager getPager(){
-		return mPager;
-	}
-
 	@Override
 	protected void onResume() {
 		super.onResume();
@@ -130,12 +124,6 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		if(volumeDialog == null){
 			createVolumeDialog();
 		}
-	}
-
-	@Override
-	protected void onStart() {
-		super.onStart();
-		System.out.println("start");
 	}
 
 	private void createVolumeDialog(){
@@ -157,6 +145,9 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		});
 	}
 
+	/**
+	 * Dismiss the volume dialog on pause if it is showing
+	 */
 	@Override
 	protected void onPause() {
 		super.onPause();
@@ -165,121 +156,23 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		volumeDialog = null;
 	}
 
+	/**
+	 * Request the MPD server status on start
+	 */
 	@Override
 	public void onPostCreate(Bundle savedInstanceState){
 		super.onPostCreate(savedInstanceState);
 		mpc.requestStatus();
 	}
 
+	/**
+	 * Save the current tab
+	 */
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		outState.putInt(TAB, mPager.getCurrentItem());
 		super.onSaveInstanceState(outState);
 	}
-
-	/**
-	 * This is a helper class that implements a generic mechanism for
-	 * associating fragments with the tabs in a tab host.  It relies on a
-	 * trick.  Normally a tab host has a simple API for supplying a View or
-	 * Intent that each tab will show.  This is not sufficient for switching
-	 * between fragments.  So instead we make the content part of the tab host
-	 * 0dp high (it is not shown) and the TabManager supplies its own dummy
-	 * view to show as the tab content.  It listens to changes in tabs, and takes
-	 * care of switch to the correct fragment shown in a separate content area
-	 * whenever the selected tab changes.
-	 */
-	public static class TabManager implements TabHost.OnTabChangeListener {
-		private final FragmentActivity mActivity;
-		private final TabHost mTabHost;
-		private final int mContainerId;
-		private final HashMap<String, TabInfo> mTabs = new HashMap<String, TabInfo>();
-		TabInfo mLastTab;
-
-		static final class TabInfo {
-			private final String tag;
-			private final Class<?> clss;
-			private final Bundle args;
-			private MusicFragment fragment;
-
-			TabInfo(String _tag, Class<?> _class, Bundle _args) {
-				tag = _tag;
-				clss = _class;
-				args = _args;
-			}
-		}
-
-		static class DummyTabFactory implements TabHost.TabContentFactory {
-			private final Context mContext;
-
-			public DummyTabFactory(Context context) {
-				mContext = context;
-			}
-
-			@Override
-			public View createTabContent(String tag) {
-				View v = new View(mContext);
-				v.setMinimumWidth(0);
-				v.setMinimumHeight(0);
-				return v;
-			}
-		}
-
-		public TabManager(FragmentActivity activity, TabHost tabHost, int containerId) {
-			mActivity = activity;
-			mTabHost = tabHost;
-			mContainerId = containerId;
-			mTabHost.setOnTabChangedListener(this);
-		}
-
-		public void addTab(TabHost.TabSpec tabSpec, Class<?> clss, Bundle args) {
-			tabSpec.setContent(new DummyTabFactory(mActivity));
-			String tag = tabSpec.getTag();
-
-			TabInfo info = new TabInfo(tag, clss, args);
-
-			// Check to see if we already have a fragment for this tab, probably
-			// from a previously saved state.  If so, deactivate it, because our
-			// initial state is that a tab isn't shown.
-			info.fragment = (MusicFragment)mActivity.getSupportFragmentManager().findFragmentByTag(tag);
-			if (info.fragment != null && !info.fragment.isDetached()) {
-				FragmentTransaction ft = mActivity.getSupportFragmentManager().beginTransaction();
-				ft.detach(info.fragment);
-				ft.commit();
-			}
-
-			mTabs.put(tag, info);
-			mTabHost.addTab(tabSpec);
-		}
-
-		@Override
-		public void onTabChanged(String tabId) {
-			TabInfo newTab = mTabs.get(tabId);
-			if (mLastTab != newTab) {
-				FragmentTransaction ft = mActivity.getSupportFragmentManager().beginTransaction();
-				if (mLastTab != null) {
-					if (mLastTab.fragment != null) {
-						ft.detach(mLastTab.fragment);
-					}
-				}
-				if (newTab != null) {
-					if (newTab.fragment == null) {
-						newTab.fragment = (MusicFragment)Fragment.instantiate(mActivity,
-								newTab.clss.getName(), newTab.args);
-						ft.add(mContainerId, newTab.fragment, newTab.tag);
-					} else {
-						ft.attach(newTab.fragment);
-					}
-				}
-
-				mLastTab = newTab;
-				ft.commit();
-				mActivity.getSupportFragmentManager().executePendingTransactions();
-			}
-		}
-
-	}
-
-
 
 	/**
 	 * Fired when the rewind button is clicked. Skips back a song in the playlist.
@@ -331,10 +224,17 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		mpc.requestStatus();
 	}
 
-	public void returnToPlaying(View v){
+	/**
+	 * Navigates up one level in the current tab
+	 * @param v
+	 */
+	public void navigateUp(View v){
 		((MPCFragment)mPagerAdapter.getFragment(mPager.getCurrentItem())).navigateUp();
 	}
 
+	/**
+	 * Fire volume change
+	 */
 	@Override
 	public boolean onKeyUp(int keyCode, KeyEvent event) {
 		if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP)
@@ -342,6 +242,11 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		return super.onKeyUp(keyCode, event);
 	}
 
+	/**
+	 * Swallows volume keyDown actions as they are caught on keyUp. 
+	 * If the action is a back press it attempts to navigate up a level
+	 * in the tab and otherwise passes on the back press to its parent.
+	 */
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		// Ignore releasing of buttons
@@ -365,18 +270,29 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		}
 	}
 
+	/**
+	 * Requests a volume change of the specified amount, records when the
+	 * change was made and requests the MPD server to update its status.
+	 * @param change
+	 */
 	private void changeVolume(int change){
 		mpc.changeVolume(change);
 		lastVolChange = System.currentTimeMillis();
 		mpc.requestStatus();
 	}
 
+	/**
+	 * Shows options menu.
+	 */
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getSherlock().getMenuInflater().inflate(R.menu.menu, menu);
 		return true;
 	}
 
+	/**
+	 * Handles selection of items in the options menu
+	 */
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 
@@ -389,6 +305,10 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		}
 	}
 
+	/**
+	 * Shows a toast message when the connection fails if one is not already
+	 * showing.
+	 */
 	@Override
 	public void connectionFailed(final String message) {
 		this.runOnUiThread(new Runnable(){
@@ -400,6 +320,9 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 			}});
 	}
 
+	/**
+	 * Passes the database update indication onto the active fragment.
+	 */
 	@Override
 	public void databaseUpdated() {
 		for(int i = 0; i < mPagerAdapter.getCount(); i++){
@@ -409,12 +332,19 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		}
 	}
 
+	/**
+	 * Updates the UI elements and the volume indicator when the status
+	 * is updated (triggered by MPClient). Will only show volume indicator
+	 * if the user recently changed the volume. This prevents it from
+	 * being shown when another client changes the MPD server's volume.
+	 */
 	@Override
 	public void statusUpdate(final MPCStatus newStatus) {
 		runOnUiThread(new Runnable(){
 			@Override public void run(){
 				if(newStatus == null){return;}
 
+				// Update play/pause button
 				View playPauseView = findViewById(R.id.playPauseButton);
 				if(newStatus.playing){
 					playPauseView.setBackgroundResource(R.drawable.pause);
@@ -424,6 +354,7 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 					playPauseView.setTag("play");
 				}
 
+				// update shuffle button
 				View shuffleBtn = findViewById(R.id.shuffleButton);
 				if(newStatus.shuffling){
 					shuffleBtn.setBackgroundResource(R.drawable.shuffle);
@@ -433,6 +364,7 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 					shuffleBtn.setTag("off");
 				}
 
+				// Show volume indicator if user recently update volume
 				if(System.currentTimeMillis() - lastVolChange <= 1000){
 					if(volumeDialog == null) return;
 					final SeekBar volumeBar = volumeDialog.volumeBar();
@@ -444,12 +376,18 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 
 	}
 
+	/**
+	 * Change to the selected tab's fragment
+	 */
 	@Override
 	public void onTabSelected(Tab tab, FragmentTransaction ft) {
 		mPager.setCurrentItem(tab.getPosition());
 	}
 
-	// Navigate to the top level of a tan when it is reselected
+	/**
+	 * Navigate to the top level of the current fragment when it's tab is
+	 * reselected.
+	 */
 	@Override
 	public void onTabReselected(Tab tab, FragmentTransaction ft) {
 		((MPCFragment)mPagerAdapter.getFragment(tab.getPosition())).navigateTop();
@@ -457,6 +395,10 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 
 	@Override	public void onTabUnselected(Tab tab, FragmentTransaction ft) {}
 
+	/**
+	 * Show the specified song in the songs tab
+	 * @param song
+	 */
 	public void showInSongs(MPCSong song){
 		hideKeyboard();
 		MusicFragment songFragment = mPagerAdapter.getMusicFragment(0);
@@ -464,6 +406,10 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		mPager.setCurrentItem(0);
 	}
 	
+	/**
+	 * Show the specified music item in the artists tab (supports MPCsong or MPCArtist)
+	 * @param music
+	 */
 	public void showInArtists(MPCMusicMeta music){
 		hideKeyboard();
 		MusicFragment artistFragment = mPagerAdapter.getMusicFragment(1);
@@ -471,6 +417,10 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		mPager.setCurrentItem(1);
 	}
 	
+	/**
+	 * Shows the specified music item in the albums tab (supports MPCSong or MPCAlbum)
+	 * @param music
+	 */
 	public void showInAlbums(MPCMusicMeta music){
 		hideKeyboard();
 		MusicFragment albumFragment = mPagerAdapter.getMusicFragment(2);
@@ -478,6 +428,9 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		mPager.setCurrentItem(2);
 	}
 	
+	/**
+	 * Hide the on screen keyboard if it is showing
+	 */
 	private void hideKeyboard(){
 		InputMethodManager inputManager = (InputMethodManager) this
 	            .getSystemService(Context.INPUT_METHOD_SERVICE);

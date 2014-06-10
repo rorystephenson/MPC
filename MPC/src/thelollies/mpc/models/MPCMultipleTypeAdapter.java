@@ -15,7 +15,7 @@ import android.widget.TextView;
 
 
 /**
- * Adapter for the listView which displays MPCSongs.
+ * Adapter for the listView which holds songs, artists and albums.
  * @author thelollies
  *
  */
@@ -48,17 +48,22 @@ public class MPCMultipleTypeAdapter extends BaseAdapter {
 
 		MPCMusicMeta song = music.get(position);
 		int viewType = getItemViewType(position);
+		
+		// Create new view if we cannot recycle
 		if(convertView == null){
 			switch(viewType){
 			case 0: convertView = inflater.inflate(R.layout.row_song, null); break;
 			case 1: convertView = inflater.inflate(R.layout.row_artist, null); break;
 			default: convertView = inflater.inflate(R.layout.row_album, null); break;
 			}
+			
+			// Uses holder pattern to implement recycling of views
 			holder = new ViewHolder();
 			holder.textViewTop = (TextView) convertView.findViewById(R.id.toptext);
 			holder.textViewBottom = (TextView) convertView.findViewById(R.id.bottomtext);
 			convertView.setTag(holder);
 		}else{
+			// Recycle invisible view
 			holder = (ViewHolder)convertView.getTag();
 		}
 
@@ -83,6 +88,11 @@ public class MPCMultipleTypeAdapter extends BaseAdapter {
 		return position;
 	}
 
+	/**
+	 * Holder is simply a container for row information, used to recycle views.
+	 * @author Rory Stephenson
+	 *
+	 */
 	private static class ViewHolder {
 		public TextView textViewTop;
 		public TextView textViewBottom;

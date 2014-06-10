@@ -4,6 +4,11 @@ import java.io.Serializable;
 
 import mpc.MPCQuery;
 
+/**
+ * ListState holds a parent ListState, a music query and the position
+ * of the last activated item in the list that results from the query.
+ * @author Rory Stephenson
+ */
 public class ListState implements Serializable{
 	private static final long serialVersionUID = 3L;
 	public final ListState parent;

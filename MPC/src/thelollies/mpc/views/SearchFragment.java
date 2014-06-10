@@ -32,16 +32,26 @@ import android.widget.ListView;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.app.SherlockListFragment;
 
+/**
+ * SearchFragment contains a search box and a results list which is populated
+ * incrementally based on the results of the entered query. Selecting results
+ * fires navigation to the selected item in the appropriate music tab.
+ * @author Rory Stephenson
+ *
+ */
 public class SearchFragment extends SherlockListFragment implements 
 MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 
-	private boolean dbRenewed = false;
 	private static SongDatabase songDatabase;
 	private static List<MPCMusicMeta> results = new ArrayList<MPCMusicMeta>();
 	private static MPCMultipleTypeAdapter adapter;
 	private int searchLimit = 10;
 	private boolean searchLimitChanged = false;
 
+	/**
+	 * This constructor is called for instantiation in the ViewPager
+	 * @return
+	 */
 	public static SearchFragment newInstance(){
 		SearchFragment listFragment = new SearchFragment();
 		return listFragment;
@@ -50,6 +60,7 @@ MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		// Get a handle to the music database
 		if (songDatabase == null) 
 			songDatabase = new SongDatabase(getSherlockActivity());
 	}
@@ -57,21 +68,25 @@ MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
+		// Create list adapter
 		adapter = new MPCMultipleTypeAdapter(getSherlockActivity(), results);
 		setListAdapter(adapter);
+		
+		// Load search limit preference
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getSherlockActivity());
 		searchLimit = Integer.parseInt(prefs.getString("searchLimit", "10"));
+		
+		// Listener for search limit changing
 		prefs.registerOnSharedPreferenceChangeListener(this);
+		// Register the ListView to receive long-press actions and react to them
 		registerForContextMenu(getListView());
 		getListView().setOnCreateContextMenuListener(this);
 	}
 
-	public void dbRenewed(){
-		dbRenewed = true;
-	}
 
 	@Override
 	public void onResume() {
+		// Save the current search text
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getSherlockActivity());
 		setSearchText(prefs.getString("searchText", ""));
 
@@ -93,22 +108,26 @@ MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 		super.onListItemClick(l, v, position, id);
 		Object o = l.getItemAtPosition(position);
 
-		if(o instanceof MPCSong){
+		if(o instanceof MPCSong){// Navigate to song in Songs tab
 			((TabContainer)getActivity()).showInSongs((MPCSong)o);
 		}
-		else if (o instanceof MPCArtist){
+		else if (o instanceof MPCArtist){// Navigate to artist in artists tab
 			((TabContainer)getActivity()).showInArtists((MPCArtist)o);
 		}
-		else if(o instanceof MPCAlbum){
+		else if(o instanceof MPCAlbum){// Navigate to album in Albums tab
 			((TabContainer)getActivity()).showInAlbums((MPCAlbum)o);
 		}	
 	}
 
-	public boolean navigateUp(){
-		return false;
-	}
-	public void navigateTop(){}
+	// Required by MPCFragment, have no meaning here
+	@Override	public boolean navigateUp(){return false;}
+	@Override	public void navigateTop(){}
+	@Override	public void dbRenewed(){}
 
+	/**
+	 * Fires a new query and updates the results list every time a change is made
+	 * in the search text
+	 */
 	@Override
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
 		String query = s.toString();
@@ -118,6 +137,9 @@ MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 		adapter.setData(results);
 	}
 
+	/**
+	 * Update the query if the search limit is changed
+	 */
 	@Override
 	public void onAttach(Activity activity) {
 		if(searchLimitChanged){
@@ -128,6 +150,11 @@ MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 		super.onAttach(activity);
 	}
 
+	/**
+	 * Internal helper method which sets the search text and places the cursor at the 
+	 * end of the text
+	 * @param text
+	 */
 	private void setSearchText(final String text){
 		final EditText searchText = (EditText)getActivity().findViewById(R.id.search_text);
 		searchText.setText(text);
@@ -146,6 +173,9 @@ MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 	@Override	public void beforeTextChanged(CharSequence s, int start, int count,	int after) {}
 	@Override	public void afterTextChanged(Editable s) {}
 
+	/**
+	 * Refresh the search results if the search limit is changed
+	 */
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
@@ -161,6 +191,9 @@ MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 		}
 	}
 
+	/**
+	 * Save the current search text
+	 */
 	@Override
 	public void onPause() {
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getSherlockActivity());
@@ -172,6 +205,9 @@ MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 		super.onPause();
 	}
 
+	/**
+	 * Give the options for long-clicking an MPCSong
+	 */
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v,
 			ContextMenuInfo menuInfo) {
@@ -193,18 +229,23 @@ MPCFragment, TextWatcher, OnSharedPreferenceChangeListener{
 		super.onCreateContextMenu(menu, v, menuInfo);
 	}
 	
+	/**
+	 * React to a context menu item selection
+	 */
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 		AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
 		
+		// Make sure it is an MPCSong that was long-clicked originally
 		Object clicked = getListAdapter().getItem(info.position);
 		if(!(clicked instanceof MPCSong)) return true;
 	
 		MPCSong song = (MPCSong) clicked;
 	
-		if(item.getItemId() == 0)
+
+		if(item.getItemId() == 0) // Show in Arists selected
 			((TabContainer)getActivity()).showInArtists(song);
-		else
+		else // Show in Albums selected
 			((TabContainer)getActivity()).showInAlbums(song);
 		
 		return true;
