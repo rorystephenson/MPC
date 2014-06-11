@@ -16,6 +16,7 @@
     <string name="vinylIcon">Album</string>
     <string name="artistIcon">Artist</string>
     <string name="search">Search</string>
-    <string name="limitSearchResults">Limit Search Results</string>
+    <string name="searchLimit">Search Limit</string>
+    <string name="searchLimitDescription">A lower limit makes search faster</string>
 
 </resources>
