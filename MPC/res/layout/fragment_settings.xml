@@ -21,6 +21,19 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        android:key="search"
+        android:title="@string/search">
+
+        <ListPreference
+            android:key="searchLimit"
+            android:title="@string/searchLimit"
+            android:summary="@string/searchLimitDescription"
+            android:entries="@array/searchLimitArrayNames"
+            android:entryValues="@array/searchLimitArrayValues" />
+        
+    </PreferenceCategory>
+    
+    <PreferenceCategory
         android:key="database_category"
         android:title="@string/database">
 
