@@ -82,10 +82,14 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 		mPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
 			@Override
 			public void onPageSelected(int position) {
-				// Checks the tab isn't already pointing to the right
-				// Page otherwise selecting it will cause tabReselected to be fired
 				ActionBar actionBar = getSupportActionBar();
 				int selectedNavInd = actionBar.getSelectedNavigationIndex();
+				
+				// Hide the keyboard if we are leaving search tab
+				if(selectedNavInd == 3) hideKeyboard();
+				
+				// Checks the tab isn't already pointing to the right
+				// Page otherwise selecting it will cause tabReselected to be fired
 				if(selectedNavInd != position){
 					actionBar.setSelectedNavigationItem(position);
 				}
@@ -381,6 +385,7 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 	 */
 	@Override
 	public void onTabSelected(Tab tab, FragmentTransaction ft) {
+		if(mPager.getCurrentItem() == 3) hideKeyboard();
 		mPager.setCurrentItem(tab.getPosition());
 	}
 
@@ -400,7 +405,6 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 	 * @param song
 	 */
 	public void showInSongs(MPCSong song){
-		hideKeyboard();
 		MusicFragment songFragment = mPagerAdapter.getMusicFragment(0);
 		songFragment.showInSongs(song);
 		mPager.setCurrentItem(0);
@@ -411,7 +415,6 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 	 * @param music
 	 */
 	public void showInArtists(MPCMusicMeta music){
-		hideKeyboard();
 		MusicFragment artistFragment = mPagerAdapter.getMusicFragment(1);
 		artistFragment.showInArtists(music);
 		mPager.setCurrentItem(1);
@@ -422,7 +425,6 @@ public class TabContainer extends SherlockFragmentActivity implements MPCListene
 	 * @param music
 	 */
 	public void showInAlbums(MPCMusicMeta music){
-		hideKeyboard();
 		MusicFragment albumFragment = mPagerAdapter.getMusicFragment(2);
 		albumFragment.showInAlbums(music);
 		mPager.setCurrentItem(2);
